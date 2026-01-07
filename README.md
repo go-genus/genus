@@ -130,7 +130,11 @@ customDB := genus.New(sqlDB, &MyLogger{})
 ## Instalação
 
 ```bash
-go get github.com/GabrielOnRails/genus
+# Versão mais recente
+go get github.com/GabrielOnRails/genus@latest
+
+# Versão específica (recomendado para produção)
+go get github.com/GabrielOnRails/genus@v2.0.0
 ```
 
 ## Quick Start
