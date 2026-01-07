@@ -216,7 +216,7 @@ func (u *User) BeforeSave() error {
 
 ---
 
-## [1.0.1] - 2024-01-XX
+## [1.0.1] - 2025-11-25
 
 ### Corrigido
 
