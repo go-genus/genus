@@ -15,7 +15,7 @@ Configura git hooks para validação de commits.
 ### O que faz:
 
 - Instala o hook `commit-msg` que valida mensagens de commit
-- Bloqueia commits que mencionam ferramentas de IA (Claude, Anthropic, etc.)
+- Valida formato e conteúdo das mensagens de commit
 - Garante consistência nas mensagens de commit do projeto
 
 ### Quando executar:

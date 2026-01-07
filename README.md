@@ -259,7 +259,7 @@ func Table[T any](g *Genus) *query.Builder[T] {
 
 ## Comparação com Outros ORMs
 
-| Característica | GORM | Ent | sqlboiler | Squirrel | **Genus 1.x** |
+| Característica | GORM | Ent | sqlboiler | Squirrel | **Genus 2.0** |
 |---------------|------|-----|-----------|----------|---------------|
 | Type-safe queries | ❌ | ✅ | ✅ | ❌ | ✅ |
 | Retorna `[]T` | ❌ | ✅ | ✅ | N/A | ✅ |
@@ -271,6 +271,11 @@ func Table[T any](g *Genus) *query.Builder[T] {
 | Tipos Optional[T] | ❌ | ❌ | ⚠️ | ❌ | ✅ |
 | SQL logging automático | ⚠️ | ⚠️ | ❌ | ❌ | ✅ |
 | Performance monitoring | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Relacionamentos | ✅ | ✅ | ⚠️ | ❌ | ✅ |
+| Eager loading | ✅ | ✅ | ⚠️ | ❌ | ✅ |
+| JOINs type-safe | ❌ | ✅ | ❌ | ⚠️ | ✅ |
+| Soft deletes | ✅ | ✅ | ❌ | ❌ | ✅ |
+| Hooks avançados | ✅ | ✅ | ⚠️ | ❌ | ✅ |
 | Zero dependencies | ❌ | ❌ | ❌ | ✅ | ✅ |
 
 **Legenda:**
@@ -430,6 +435,195 @@ minors := baseQuery.Where(UserFields.Age.Lt(18))
 - ✅ Facilita testes e composição
 - ✅ Supera Squirrel em segurança de tipos
 
+## Versão 2.0 - Recursos Principais
+
+### 6. Relacionamentos (HasMany, BelongsTo, ManyToMany)
+
+Genus 2.0 suporta relacionamentos completos usando tags em struct fields:
+
+```go
+type User struct {
+    core.Model
+    Name  string `db:"name"`
+    Posts []Post `db:"-" relation:"has_many,foreign_key=user_id"`
+}
+
+type Post struct {
+    core.Model
+    Title  string `db:"title"`
+    UserID int64  `db:"user_id"`
+    User   *User  `db:"-" relation:"belongs_to,foreign_key=user_id"`
+    Tags   []Tag  `db:"-" relation:"many_to_many,join_table=post_tags,foreign_key=post_id,association_foreign_key=tag_id"`
+}
+
+type Tag struct {
+    core.Model
+    Name  string `db:"name"`
+    Posts []Post `db:"-" relation:"many_to_many,join_table=post_tags,foreign_key=tag_id,association_foreign_key=post_id"`
+}
+
+// Registrar models com relacionamentos
+genus.RegisterModels(&User{}, &Post{}, &Tag{})
+```
+
+**Tipos de Relacionamentos:**
+- **HasMany**: Um para muitos (User has many Posts)
+- **BelongsTo**: Pertence a (Post belongs to User)
+- **ManyToMany**: Muitos para muitos via tabela de junção (Post has many Tags)
+
+### 7. Eager Loading (Preload)
+
+Evite o problema N+1 com eager loading:
+
+```go
+// Sem Preload - N+1 queries
+users, _ := genus.Table[User](db).Find(ctx)
+for _, user := range users {
+    // Cada iteração executa uma query!
+    posts, _ := genus.Table[Post](db).Where(PostFields.UserID.Eq(user.ID)).Find(ctx)
+}
+
+// Com Preload - Apenas 2 queries
+users, _ := genus.Table[User](db).
+    Preload("Posts").  // Carrega todos os Posts em uma única query
+    Find(ctx)
+
+for _, user := range users {
+    // user.Posts já está carregado!
+    fmt.Println(user.Posts)
+}
+
+// Preload aninhado
+users, _ := genus.Table[User](db).
+    Preload("Posts.Tags").  // Carrega Posts e seus Tags
+    Find(ctx)
+```
+
+**Vantagens:**
+- ✅ Resolve problema N+1
+- ✅ Reduz queries de N+1 para 2-3
+- ✅ Suporta preload aninhado (`"Posts.Comments"`)
+- ✅ Funciona com todos os tipos de relacionamento
+
+### 8. JOINs Type-Safe
+
+Execute JOINs com segurança de tipos:
+
+```go
+// Type-safe JOIN com generics
+users, _ := genus.Table[User](db).
+    Join[Post](query.On("users.id", "posts.user_id")).
+    Where(PostFields.Title.Like("%Go%")).
+    Find(ctx)
+
+// LEFT JOIN
+users, _ := genus.Table[User](db).
+    LeftJoin[Post](query.On("users.id", "posts.user_id")).
+    Find(ctx)
+
+// Múltiplos JOINs
+posts, _ := genus.Table[Post](db).
+    Join[User](query.On("posts.user_id", "users.id")).
+    Join[Tag](query.On("posts.id", "post_tags.post_id")).
+    Find(ctx)
+```
+
+**Vantagens:**
+- ✅ Type-safe com generics `Join[T]()`
+- ✅ Suporta INNER, LEFT e RIGHT JOINs
+- ✅ Queries complexas mantendo type-safety
+- ✅ SQL gerado é transparente e auditável
+
+### 9. Soft Deletes
+
+Deleção suave com recuperação fácil:
+
+```go
+// Definir model com soft delete
+type User struct {
+    core.SoftDeleteModel  // Inclui DeletedAt field
+    Name string `db:"name"`
+}
+
+// Delete suave (seta deleted_at)
+user := &User{Name: "Alice"}
+db.DB().Delete(ctx, user)  // UPDATE users SET deleted_at = NOW()
+
+// Queries automáticas excluem soft-deleted
+users, _ := genus.Table[User](db).Find(ctx)  // WHERE deleted_at IS NULL
+
+// Incluir soft-deleted
+users, _ := genus.Table[User](db).WithTrashed().Find(ctx)
+
+// Apenas soft-deleted
+users, _ := genus.Table[User](db).OnlyTrashed().Find(ctx)
+
+// Delete permanente
+db.DB().ForceDelete(ctx, user)  // DELETE FROM users
+```
+
+**Vantagens:**
+- ✅ Opt-in via `SoftDeleteModel`
+- ✅ Filtro automático com global scopes
+- ✅ Recuperação fácil de dados deletados
+- ✅ Delete permanente com `ForceDelete()`
+
+### 10. Hooks Avançados
+
+Intercepte operações do ciclo de vida:
+
+```go
+type User struct {
+    core.Model
+    Name      string
+    UpdatedBy string
+}
+
+// Hook antes de criar
+func (u *User) BeforeCreate() error {
+    if u.Name == "" {
+        return errors.New("name is required")
+    }
+    return nil
+}
+
+// Hook após criar
+func (u *User) AfterCreate() error {
+    log.Printf("User created: %s", u.Name)
+    return nil
+}
+
+// Hook antes de atualizar
+func (u *User) BeforeUpdate() error {
+    u.UpdatedBy = "system"
+    return nil
+}
+
+// Hook antes de salvar (Create ou Update)
+func (u *User) BeforeSave() error {
+    u.Name = strings.TrimSpace(u.Name)
+    return nil
+}
+```
+
+**Hooks Disponíveis:**
+- `BeforeCreate()` - Antes de criar
+- `AfterCreate()` - Após criar
+- `BeforeUpdate()` - Antes de atualizar
+- `AfterUpdate()` - Após atualizar
+- `BeforeDelete()` - Antes de deletar
+- `AfterDelete()` - Após deletar
+- `BeforeSave()` - Antes de Create ou Update
+- `AfterSave()` - Após Create ou Update
+- `AfterFind()` - Após carregar do banco
+
+**Vantagens:**
+- ✅ Validação customizada
+- ✅ Auditoria automática
+- ✅ Transformação de dados
+- ✅ Integração com sistemas externos
+- ✅ Rollback em caso de erro
+
 ## Roadmap
 
 ### Versão 1.x ✅ (Implementado)
@@ -441,14 +635,18 @@ minors := baseQuery.Where(UserFields.Age.Lt(18))
 - [x] Migrations automáticas (AutoMigrate + Manual)
 - [x] CLI de migrations (genus migrate)
 
-### Versão 2.x (Planejado)
-- [ ] Relações (HasMany, BelongsTo, ManyToMany)
-- [ ] Eager loading / Preloading
-- [ ] Join support
-- [ ] Hooks avançados (AfterCreate, BeforeUpdate, etc.)
-- [ ] Soft deletes
+### Versão 2.0 ✅ (Implementado)
+- [x] Relações (HasMany, BelongsTo, ManyToMany)
+- [x] Eager loading / Preloading
+- [x] Join support type-safe
+- [x] Hooks avançados (AfterCreate, BeforeUpdate, etc.)
+- [x] Soft deletes
+
+### Versão 3.x (Planejado)
 - [ ] Query caching
 - [ ] Connection pooling configuration
+- [ ] Relacionamentos polimórficos
+- [ ] Agregações type-safe (Count, Sum, Avg, etc.)
 
 ## Exemplos
 
@@ -498,7 +696,7 @@ Este script instala hooks que validam mensagens de commit, garantindo consistên
 
 O projeto utiliza os seguintes hooks:
 
-- **commit-msg**: Valida mensagens de commit, bloqueando referências a ferramentas de IA externas
+- **commit-msg**: Valida formato e conteúdo das mensagens de commit
 
 Para reinstalar os hooks: `./scripts/setup-hooks.sh`
 

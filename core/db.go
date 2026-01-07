@@ -89,6 +89,13 @@ func (db *DB) SetLogger(logger Logger) {
 // Create insere um novo registro no banco de dados.
 // T deve ter embedded Model ou implementar TableNamer.
 func (db *DB) Create(ctx context.Context, model interface{}) error {
+	// Hook BeforeSave
+	if bs, ok := model.(BeforeSaver); ok {
+		if err := bs.BeforeSave(); err != nil {
+			return fmt.Errorf("BeforeSave hook failed: %w", err)
+		}
+	}
+
 	// Hook BeforeCreate
 	if bc, ok := model.(BeforeCreater); ok {
 		if err := bc.BeforeCreate(); err != nil {
@@ -135,11 +142,39 @@ func (db *DB) Create(ctx context.Context, model interface{}) error {
 	// Define o ID no modelo
 	setID(model, id)
 
+	// Hook AfterCreate
+	if ac, ok := model.(AfterCreater); ok {
+		if err := ac.AfterCreate(); err != nil {
+			return fmt.Errorf("AfterCreate hook failed: %w", err)
+		}
+	}
+
+	// Hook AfterSave
+	if as, ok := model.(AfterSaver); ok {
+		if err := as.AfterSave(); err != nil {
+			return fmt.Errorf("AfterSave hook failed: %w", err)
+		}
+	}
+
 	return nil
 }
 
 // Update atualiza um registro existente.
 func (db *DB) Update(ctx context.Context, model interface{}) error {
+	// Hook BeforeSave
+	if bs, ok := model.(BeforeSaver); ok {
+		if err := bs.BeforeSave(); err != nil {
+			return fmt.Errorf("BeforeSave hook failed: %w", err)
+		}
+	}
+
+	// Hook BeforeUpdate
+	if bu, ok := model.(BeforeUpdater); ok {
+		if err := bu.BeforeUpdate(); err != nil {
+			return fmt.Errorf("BeforeUpdate hook failed: %w", err)
+		}
+	}
+
 	tableName := getTableName(model)
 	id := getID(model)
 
@@ -201,11 +236,56 @@ func (db *DB) Update(ctx context.Context, model interface{}) error {
 		return fmt.Errorf("no rows updated")
 	}
 
+	// Hook AfterUpdate
+	if au, ok := model.(AfterUpdater); ok {
+		if err := au.AfterUpdate(); err != nil {
+			return fmt.Errorf("AfterUpdate hook failed: %w", err)
+		}
+	}
+
+	// Hook AfterSave
+	if as, ok := model.(AfterSaver); ok {
+		if err := as.AfterSave(); err != nil {
+			return fmt.Errorf("AfterSave hook failed: %w", err)
+		}
+	}
+
 	return nil
 }
 
 // Delete remove um registro do banco de dados.
+// Se o model implementa SoftDeletable, realiza soft delete (UPDATE deleted_at).
+// Caso contrário, realiza hard delete (DELETE FROM).
 func (db *DB) Delete(ctx context.Context, model interface{}) error {
+	// Hook BeforeDelete
+	if bd, ok := model.(BeforeDeleter); ok {
+		if err := bd.BeforeDelete(); err != nil {
+			return fmt.Errorf("BeforeDelete hook failed: %w", err)
+		}
+	}
+
+	// Verifica se é soft deletable
+	if sd, ok := model.(SoftDeletable); ok {
+		// Soft delete: set deleted_at = NOW()
+		now := time.Now()
+		sd.SetDeletedAt(&now)
+
+		// Usa Update ao invés de DELETE
+		if err := db.Update(ctx, model); err != nil {
+			return err
+		}
+
+		// Hook AfterDelete
+		if ad, ok := model.(AfterDeleter); ok {
+			if err := ad.AfterDelete(); err != nil {
+				return fmt.Errorf("AfterDelete hook failed: %w", err)
+			}
+		}
+
+		return nil
+	}
+
+	// Hard delete (comportamento original)
 	tableName := getTableName(model)
 	id := getID(model)
 
@@ -237,6 +317,66 @@ func (db *DB) Delete(ctx context.Context, model interface{}) error {
 
 	if rows == 0 {
 		return fmt.Errorf("no rows deleted")
+	}
+
+	// Hook AfterDelete
+	if ad, ok := model.(AfterDeleter); ok {
+		if err := ad.AfterDelete(); err != nil {
+			return fmt.Errorf("AfterDelete hook failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// ForceDelete remove permanentemente um registro do banco de dados,
+// ignorando soft delete mesmo se o model implementa SoftDeletable.
+func (db *DB) ForceDelete(ctx context.Context, model interface{}) error {
+	// Hook BeforeDelete
+	if bd, ok := model.(BeforeDeleter); ok {
+		if err := bd.BeforeDelete(); err != nil {
+			return fmt.Errorf("BeforeDelete hook failed: %w", err)
+		}
+	}
+
+	tableName := getTableName(model)
+	id := getID(model)
+
+	if id == 0 {
+		return fmt.Errorf("cannot delete model with zero ID")
+	}
+
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE id = %s",
+		db.dialect.QuoteIdentifier(tableName),
+		db.dialect.Placeholder(1),
+	)
+
+	start := time.Now()
+	result, err := db.executor.ExecContext(ctx, query, id)
+	duration := time.Since(start).Nanoseconds()
+
+	if err != nil {
+		db.logger.LogError(query, []interface{}{id}, err)
+		return fmt.Errorf("failed to delete: %w", err)
+	}
+
+	db.logger.LogQuery(query, []interface{}{id}, duration)
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("no rows deleted")
+	}
+
+	// Hook AfterDelete
+	if ad, ok := model.(AfterDeleter); ok {
+		if err := ad.AfterDelete(); err != nil {
+			return fmt.Errorf("AfterDelete hook failed: %w", err)
+		}
 	}
 
 	return nil

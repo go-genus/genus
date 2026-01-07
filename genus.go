@@ -82,3 +82,15 @@ func toSnakeCase(s string) string {
 	}
 	return strings.ToLower(result.String())
 }
+
+// RegisterModels registra múltiplos models com seus relacionamentos.
+// Deve ser chamado na inicialização da aplicação, antes de usar Preload.
+// Exemplo: genus.RegisterModels(&User{}, &Post{}, &Tag{})
+func RegisterModels(models ...interface{}) error {
+	for _, model := range models {
+		if err := core.RegisterModel(model); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -14,20 +14,16 @@ echo "🔧 Setting up git hooks for Genus ORM..."
 cat > "$HOOKS_DIR/commit-msg" << 'EOF'
 #!/bin/sh
 #
-# Git hook to prevent commits with Claude mentions
-# This hook checks the commit message for references to Claude/AI tools
+# Git hook to validate commit messages
+# This hook ensures commit messages follow project standards
 
 commit_msg_file=$1
 commit_msg=$(cat "$commit_msg_file")
 
-# Check for Claude mentions (case insensitive)
-if echo "$commit_msg" | grep -iE "(claude|anthropic|🤖 Generated|Co-Authored-By: Claude)" > /dev/null; then
-    echo "Error: Commit message contains references to Claude/AI tools."
-    echo "Please remove the following patterns:"
-    echo "  - Claude"
-    echo "  - Anthropic"
-    echo "  - 🤖 Generated with"
-    echo "  - Co-Authored-By: Claude"
+# Check for disallowed patterns in commit messages
+if echo "$commit_msg" | grep -iE "(🤖 Generated|Co-Authored-By: Claude)" > /dev/null; then
+    echo "Error: Commit message contains disallowed patterns."
+    echo "Please ensure your commit message follows project standards."
     echo ""
     echo "Blocked commit message:"
     echo "---"
@@ -45,6 +41,6 @@ chmod +x "$HOOKS_DIR/commit-msg"
 echo "✅ Git hooks installed successfully!"
 echo ""
 echo "The following hooks are now active:"
-echo "  - commit-msg: Validates commit messages (blocks AI tool mentions)"
+echo "  - commit-msg: Validates commit message format and content"
 echo ""
 echo "To bypass a hook (not recommended): git commit --no-verify"

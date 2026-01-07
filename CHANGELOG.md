@@ -5,6 +5,217 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2024-01-XX
+
+### Adicionado - Versão 2.0 (Relational Features)
+
+#### 1. Sistema de Relacionamentos (HasMany, BelongsTo, ManyToMany)
+
+**Motivação:** Permitir definição de relacionamentos entre models usando tags, eliminando boilerplate e mantendo type-safety.
+
+**Funcionalidades:**
+
+- Relacionamento **HasMany**: Um para muitos (User has many Posts)
+- Relacionamento **BelongsTo**: Pertence a (Post belongs to User)
+- Relacionamento **ManyToMany**: Muitos para muitos via tabela de junção (Post has many Tags)
+- Registro de relacionamentos via `genus.RegisterModels()`
+- Tags em struct fields para definir relacionamentos
+- Suporte a foreign keys customizadas
+- Suporte a join tables para ManyToMany
+
+**Exemplo:**
+
+```go
+type User struct {
+    core.Model
+    Posts []Post `db:"-" relation:"has_many,foreign_key=user_id"`
+}
+
+type Post struct {
+    core.Model
+    UserID int64 `db:"user_id"`
+    User   *User `db:"-" relation:"belongs_to,foreign_key=user_id"`
+    Tags   []Tag `db:"-" relation:"many_to_many,join_table=post_tags,foreign_key=post_id,association_foreign_key=tag_id"`
+}
+
+genus.RegisterModels(&User{}, &Post{}, &Tag{})
+```
+
+**Arquivos:**
+- `core/relationship.go` - Sistema de registro e metadata de relacionamentos
+- `genus.go` - Helper `RegisterModels()`
+
+---
+
+#### 2. Eager Loading (Preload)
+
+**Motivação:** Resolver o problema N+1 queries, carregando relacionamentos de forma eficiente.
+
+**Funcionalidades:**
+
+- Método `.Preload(relation)` para eager loading
+- Suporte a preload aninhado (`"Posts.Comments"`)
+- Implementações otimizadas para cada tipo de relacionamento
+- Query única por relacionamento (evita N+1)
+
+**Exemplo:**
+
+```go
+// Sem Preload - N+1 queries
+users, _ := genus.Table[User](db).Find(ctx)
+for _, user := range users {
+    posts, _ := genus.Table[Post](db).Where(PostFields.UserID.Eq(user.ID)).Find(ctx)
+}
+
+// Com Preload - Apenas 2 queries
+users, _ := genus.Table[User](db).Preload("Posts").Find(ctx)
+```
+
+**Arquivos:**
+- `query/preload.go` - Engine completo de eager loading
+- `query/builder.go` - Método `Preload()` e integração
+
+---
+
+#### 3. JOINs Type-Safe
+
+**Motivação:** Permitir queries complexas com JOINs mantendo type-safety através de generics.
+
+**Funcionalidades:**
+
+- Método genérico `Join[T](condition)` para INNER JOINs
+- Método genérico `LeftJoin[T](condition)` para LEFT JOINs
+- Método genérico `RightJoin[T](condition)` para RIGHT JOINs
+- Helper `On(leftCol, rightCol)` para condições de join
+- Suporte a múltiplos JOINs na mesma query
+
+**Exemplo:**
+
+```go
+users, _ := genus.Table[User](db).
+    Join[Post](query.On("users.id", "posts.user_id")).
+    Where(PostFields.Title.Like("%Go%")).
+    Find(ctx)
+```
+
+**Arquivos:**
+- `query/join.go` - Estruturas e lógica de JOINs
+- `query/builder.go` - Métodos `Join[T]`, `LeftJoin[T]`, `RightJoin[T]`
+
+---
+
+#### 4. Soft Deletes
+
+**Motivação:** Permitir deleção suave com recuperação fácil, usando global scopes para filtrar automaticamente.
+
+**Funcionalidades:**
+
+- Interface `SoftDeletable` com `GetDeletedAt()`, `SetDeletedAt()`, `IsDeleted()`
+- Struct base `SoftDeleteModel` com campo `DeletedAt`
+- Global scope automático filtra soft-deleted por padrão
+- Métodos `WithTrashed()` e `OnlyTrashed()` para controle
+- Método `ForceDelete()` para deleção permanente
+- Integração com hooks (BeforeDelete chama soft delete automaticamente)
+
+**Exemplo:**
+
+```go
+type User struct {
+    core.SoftDeleteModel
+    Name string `db:"name"`
+}
+
+db.DB().Delete(ctx, user)  // Soft delete
+
+genus.Table[User](db).Find(ctx)  // Exclui soft-deleted
+genus.Table[User](db).WithTrashed().Find(ctx)  // Inclui soft-deleted
+
+db.DB().ForceDelete(ctx, user)  // Delete permanente
+```
+
+**Arquivos:**
+- `core/softdelete.go` - Interface e implementação
+- `query/scope.go` - Sistema de global scopes
+- `query/builder.go` - Métodos `WithTrashed()`, `OnlyTrashed()`
+- `core/db.go` - Integração em `Delete()` e novo `ForceDelete()`
+
+---
+
+#### 5. Hooks Avançados
+
+**Motivação:** Expandir sistema de hooks para cobrir todo o ciclo de vida de models.
+
+**Funcionalidades:**
+
+- **Novos hooks:**
+  - `AfterCreater` - Após criar registro
+  - `BeforeUpdater` - Antes de atualizar
+  - `AfterUpdater` - Após atualizar
+  - `BeforeDeleter` - Antes de deletar
+  - `AfterDeleter` - Após deletar
+  - `BeforeSaver` - Antes de Create ou Update
+  - `AfterSaver` - Após Create ou Update
+- Integração completa em operações CRUD
+- Rollback automático em caso de erro em hooks
+- Ordem de execução definida
+
+**Exemplo:**
+
+```go
+func (u *User) BeforeCreate() error {
+    // Validação
+}
+
+func (u *User) AfterCreate() error {
+    // Auditoria
+}
+
+func (u *User) BeforeSave() error {
+    // Normalização de dados
+}
+```
+
+**Arquivos:**
+- `core/hooks.go` - Novas interfaces de hooks
+- `core/db.go` - Integração em `Create()`, `Update()`, `Delete()`
+- `query/builder.go` - Hook `AfterFind()` corrigido
+
+---
+
+### Mudanças Técnicas
+
+#### Arquitetura
+
+- Novo sistema de registry global para relacionamentos
+- Sistema de global scopes para filtros automáticos
+- Suporte a reflection mínimo apenas para scanning e parsing de tags
+- Estrutura de preload otimizada para evitar N+1
+
+#### Performance
+
+- Eager loading reduz queries de N+1 para 2-3
+- JOINs nativos do SQL ao invés de múltiplas queries
+- Preload agrupa registros por parent_id em memória
+- Scanning otimizado com fieldPath para structs embedded
+
+#### Compatibilidade
+
+- Todas as features são opt-in
+- Não há breaking changes na API existente
+- Models sem relacionamentos continuam funcionando normalmente
+
+---
+
+### Exemplos e Documentação
+
+#### Documentação Atualizada
+
+- `README.md` - Seções completas para v2.0: Relacionamentos, Preload, JOINs, Soft Deletes, Hooks
+- `README.md` - Tabela de comparação atualizada com features v2.0
+- `README.md` - Roadmap atualizado mostrando v2.0 como implementado
+
+---
+
 ## [1.0.1] - 2024-01-XX
 
 ### Corrigido
@@ -348,28 +559,19 @@ var UserFields = struct {
 
 ## Próximas Versões
 
-### [2.0.0] - Planejado
-
-#### Relational Features
-
-- HasMany, BelongsTo, ManyToMany relationships
-- Eager loading / Preloading
-- Join support
-
-#### Database Support
-
-- MySQL dialect
-- SQLite dialect
+### [3.0.0] - Planejado
 
 #### Advanced Features
 
-- Migrations automáticas
-- Soft deletes
-- Advanced hooks (AfterCreate, BeforeUpdate, etc.)
 - Query caching
 - Connection pooling configuration
+- Relacionamentos polimórficos
+- Agregações type-safe (Count, Sum, Avg, Max, Min, GroupBy)
+- Subqueries type-safe
+- Raw SQL builder com type-safety
 
 ---
 
+[2.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v2.0.0
 [1.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v1.0.0
 [0.1.0]: https://github.com/GabrielOnRails/genus/releases/tag/v0.1.0

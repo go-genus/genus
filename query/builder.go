@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -12,15 +13,18 @@ import (
 // Builder é o query builder genérico type-safe.
 // T é o tipo do modelo sendo consultado.
 type Builder[T any] struct {
-	executor   core.Executor
-	dialect    core.Dialect
-	logger     core.Logger
-	tableName  string
-	conditions []interface{} // Condition ou ConditionGroup
-	orderBy    []OrderBy
-	limit      *int
-	offset     *int
-	selectCols []string
+	executor      core.Executor
+	dialect       core.Dialect
+	logger        core.Logger
+	tableName     string
+	conditions    []interface{} // Condition ou ConditionGroup
+	orderBy       []OrderBy
+	limit         *int
+	offset        *int
+	selectCols    []string
+	disableScopes bool // Se true, não aplica scopes automáticos (como soft delete)
+	joins         []JoinClause
+	preloads      []string // Relacionamentos para eager loading
 }
 
 // OrderBy representa uma cláusula ORDER BY.
@@ -43,10 +47,11 @@ func NewBuilder[T any](executor core.Executor, dialect core.Dialect, logger core
 // Cada método que modifica o estado retorna um novo builder.
 func (b *Builder[T]) clone() *Builder[T] {
 	newBuilder := &Builder[T]{
-		executor:  b.executor,
-		dialect:   b.dialect,
-		logger:    b.logger,
-		tableName: b.tableName,
+		executor:      b.executor,
+		dialect:       b.dialect,
+		logger:        b.logger,
+		tableName:     b.tableName,
+		disableScopes: b.disableScopes,
 	}
 
 	// Copiar conditions
@@ -77,6 +82,18 @@ func (b *Builder[T]) clone() *Builder[T] {
 	if len(b.selectCols) > 0 {
 		newBuilder.selectCols = make([]string, len(b.selectCols))
 		copy(newBuilder.selectCols, b.selectCols)
+	}
+
+	// Copiar joins
+	if len(b.joins) > 0 {
+		newBuilder.joins = make([]JoinClause, len(b.joins))
+		copy(newBuilder.joins, b.joins)
+	}
+
+	// Copiar preloads
+	if len(b.preloads) > 0 {
+		newBuilder.preloads = make([]string, len(b.preloads))
+		copy(newBuilder.preloads, b.preloads)
 	}
 
 	return newBuilder
@@ -131,13 +148,99 @@ func (b *Builder[T]) Select(columns ...string) *Builder[T] {
 	return newBuilder
 }
 
+// WithTrashed inclui registros soft-deleted nos resultados.
+// Desabilita o scope automático de soft delete.
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func (b *Builder[T]) WithTrashed() *Builder[T] {
+	newBuilder := b.clone()
+	newBuilder.disableScopes = true
+	return newBuilder
+}
+
+// OnlyTrashed retorna apenas registros soft-deleted.
+// Adiciona condição WHERE deleted_at IS NOT NULL.
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func (b *Builder[T]) OnlyTrashed() *Builder[T] {
+	newBuilder := b.clone()
+	newBuilder.disableScopes = true
+	return newBuilder.Where(Condition{
+		Field:    "deleted_at",
+		Operator: OpIsNotNull,
+	})
+}
+
+// Join adiciona um INNER JOIN type-safe à query.
+// O tipo genérico U especifica o model sendo joined.
+// Exemplo: query.Join[Post](query.On("users.id", "posts.user_id"))
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func Join[U any](b *Builder[any], on JoinCondition) *Builder[any] {
+	newBuilder := b.clone()
+	var model U
+	tableName := getTableName(model)
+
+	join := JoinClause{
+		Type:      InnerJoinType,
+		Table:     tableName,
+		Condition: on,
+	}
+	newBuilder.joins = append(newBuilder.joins, join)
+	return newBuilder
+}
+
+// LeftJoin adiciona um LEFT JOIN type-safe à query.
+// Funciona como Join mas retorna todas as linhas da tabela esquerda mesmo sem match.
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func LeftJoin[U any](b *Builder[any], on JoinCondition) *Builder[any] {
+	newBuilder := b.clone()
+	var model U
+	tableName := getTableName(model)
+
+	join := JoinClause{
+		Type:      LeftJoinType,
+		Table:     tableName,
+		Condition: on,
+	}
+	newBuilder.joins = append(newBuilder.joins, join)
+	return newBuilder
+}
+
+// RightJoin adiciona um RIGHT JOIN type-safe à query.
+// Funciona como Join mas retorna todas as linhas da tabela direita mesmo sem match.
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func RightJoin[U any](b *Builder[any], on JoinCondition) *Builder[any] {
+	newBuilder := b.clone()
+	var model U
+	tableName := getTableName(model)
+
+	join := JoinClause{
+		Type:      RightJoinType,
+		Table:     tableName,
+		Condition: on,
+	}
+	newBuilder.joins = append(newBuilder.joins, join)
+	return newBuilder
+}
+
+// Preload especifica relacionamentos para eager loading.
+// Evita o problema N+1 carregando relacionamentos de uma vez.
+// Exemplo: Preload("Posts") ou Preload("Posts.Comments") para nested.
+// IMUTÁVEL: Retorna um novo builder sem modificar o original.
+func (b *Builder[T]) Preload(relation string) *Builder[T] {
+	newBuilder := b.clone()
+	newBuilder.preloads = append(newBuilder.preloads, relation)
+	return newBuilder
+}
+
 // Find executa a query e retorna um slice de T.
 // Esta é a função mágica que retorna []T sem precisar de *[]T!
 func (b *Builder[T]) Find(ctx context.Context) ([]T, error) {
-	query, args := b.buildSelectQuery()
+	// Aplica soft delete scope automaticamente se aplicável
+	queryBuilder := applySoftDeleteScope(b)
+
+	query, args := queryBuilder.buildSelectQuery()
 
 	start := time.Now()
-	rows, err := b.executor.QueryContext(ctx, query, args...)
+	rows, err := queryBuilder.executor.QueryContext(ctx, query, args...)
 	duration := time.Since(start).Nanoseconds()
 
 	if err != nil {
@@ -152,6 +255,14 @@ func (b *Builder[T]) Find(ctx context.Context) ([]T, error) {
 		if err := scanStruct(rows, &item); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
+
+		// Hook AfterFind
+		if af, ok := any(&item).(core.AfterFinder); ok {
+			if err := af.AfterFind(); err != nil {
+				return nil, fmt.Errorf("AfterFind hook failed: %w", err)
+			}
+		}
+
 		results = append(results, item)
 	}
 
@@ -159,7 +270,20 @@ func (b *Builder[T]) Find(ctx context.Context) ([]T, error) {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	b.logger.LogQuery(query, args, duration)
+	queryBuilder.logger.LogQuery(query, args, duration)
+
+	// Executa preloads se houver
+	if len(queryBuilder.preloads) > 0 {
+		specs := make([]*PreloadSpec, len(queryBuilder.preloads))
+		for i, rel := range queryBuilder.preloads {
+			specs[i] = parsePreloadPath(rel)
+		}
+
+		if err := executePreload(ctx, queryBuilder.executor, queryBuilder.dialect, queryBuilder.logger, results, specs); err != nil {
+			return nil, fmt.Errorf("preload failed: %w", err)
+		}
+	}
+
 	return results, nil
 }
 
@@ -184,11 +308,14 @@ func (b *Builder[T]) First(ctx context.Context) (T, error) {
 
 // Count retorna a contagem de registros.
 func (b *Builder[T]) Count(ctx context.Context) (int64, error) {
-	query, args := b.buildCountQuery()
+	// Aplica soft delete scope automaticamente se aplicável
+	queryBuilder := applySoftDeleteScope(b)
+
+	query, args := queryBuilder.buildCountQuery()
 
 	var count int64
 	start := time.Now()
-	err := b.executor.QueryRowContext(ctx, query, args...).Scan(&count)
+	err := queryBuilder.executor.QueryRowContext(ctx, query, args...).Scan(&count)
 	duration := time.Since(start).Nanoseconds()
 
 	if err != nil {
@@ -210,12 +337,24 @@ func (b *Builder[T]) buildSelectQuery() (string, []interface{}) {
 	if len(b.selectCols) > 0 {
 		sb.WriteString(strings.Join(b.selectCols, ", "))
 	} else {
-		sb.WriteString("*")
+		// Se há JOINs, qualificar com o nome da tabela para evitar ambiguidade
+		if len(b.joins) > 0 {
+			sb.WriteString(b.dialect.QuoteIdentifier(b.tableName))
+			sb.WriteString(".*")
+		} else {
+			sb.WriteString("*")
+		}
 	}
 
 	// FROM
 	sb.WriteString(" FROM ")
 	sb.WriteString(b.dialect.QuoteIdentifier(b.tableName))
+
+	// JOINs
+	for _, join := range b.joins {
+		sb.WriteString(" ")
+		sb.WriteString(join.BuildSQL(b.dialect))
+	}
 
 	// WHERE
 	if len(b.conditions) > 0 {
@@ -402,4 +541,28 @@ func interfaceSlice(value interface{}) []interface{} {
 	default:
 		return []interface{}{value}
 	}
+}
+
+// getTableName retorna o nome da tabela para um model.
+// Usa TableNamer se implementado, caso contrário usa o nome do tipo.
+func getTableName(model interface{}) string {
+	if tn, ok := model.(core.TableNamer); ok {
+		return tn.TableName()
+	}
+
+	t := reflect.TypeOf(model)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	// Converte para snake_case e adiciona 's'
+	name := t.Name()
+	var result strings.Builder
+	for i, r := range name {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			result.WriteRune('_')
+		}
+		result.WriteRune(r)
+	}
+	return strings.ToLower(result.String())
 }

@@ -186,19 +186,23 @@ Ent é excelente mas mais complexo. Genus foca em simplicidade.
 
 ### Preciso definir campos manualmente?
 
-Sim, por enquanto. Mas estamos trabalhando em code generation.
+Não! Desde a versão 1.x, o Genus possui CLI de code generation.
 
-Veja: [CONTRIBUTING.md - Roadmap](./CONTRIBUTING.md#7-roadmap)
+Use: `genus generate ./models` para gerar campos automaticamente.
+
+Veja: [README.md - Code Generation CLI](./README.md#4-code-generation-cli)
 
 ### Funciona com MySQL/SQLite?
 
-Ainda não, apenas PostgreSQL. Mas é fácil adicionar!
+Sim! Genus suporta PostgreSQL, MySQL e SQLite desde a versão 1.x.
 
-Veja: [CONTRIBUTING.md - Alta Prioridade](./CONTRIBUTING.md#alta-prioridade)
+Veja: [README.md - Suporte Multi-Database](./README.md#1-suporte-multi-database)
 
 ### Tem suporte a relações?
 
-Ainda não (HasMany, BelongsTo, etc). Está no roadmap.
+Sim! Desde a versão 2.0, Genus suporta HasMany, BelongsTo e ManyToMany.
+
+Veja: [README.md - Relacionamentos](./README.md#6-relacionamentos-hasmany-belongsto-manytomany)
 
 ## 🔗 Links Úteis
 
@@ -208,13 +212,23 @@ Ainda não (HasMany, BelongsTo, etc). Está no roadmap.
 
 ## 📈 Roadmap
 
-Veja o roadmap completo em [CONTRIBUTING.md](./CONTRIBUTING.md#7-roadmap).
+Veja o roadmap completo em [CONTRIBUTING.md](./CONTRIBUTING.md#7-roadmap) e [README.md - Roadmap](./README.md#roadmap).
 
-Próximos passos:
-- [ ] MySQL e SQLite dialects
-- [ ] Code generation para campos
-- [ ] Relações (HasMany, BelongsTo)
-- [ ] Migrations
+**Versão 2.0 ✅ Implementado:**
+- [x] MySQL e SQLite dialects
+- [x] Code generation para campos
+- [x] Relações (HasMany, BelongsTo, ManyToMany)
+- [x] Migrations (AutoMigrate + Manual)
+- [x] Eager loading / Preload
+- [x] JOINs type-safe
+- [x] Soft deletes
+- [x] Hooks avançados
+
+**Próximos passos (v3.0):**
+- [ ] Query caching
+- [ ] Connection pooling configuration
+- [ ] Relacionamentos polimórficos
+- [ ] Agregações type-safe
 
 ## 🙏 Contribuidores
 
@@ -222,7 +236,7 @@ Próximos passos:
 
 ## 📝 Changelog
 
-(Adicione aqui quando tiver releases)
+Veja o changelog completo em [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
