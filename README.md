@@ -2,6 +2,7 @@
 
 Genus é um ORM (Object-Relational Mapper) de próxima geração para Go que usa **Go Generics** extensivamente para garantir **type-safety** completa em todas as operações de banco de dados.
 
+
 ## Filosofia
 
 - **Mínima Magia**: Praticamente zero reflection em runtime (apenas no scanning de resultados)
