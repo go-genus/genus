@@ -5,7 +5,7 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2025-11-11
+## [2.0.0] - 2026-01-06
 
 ### Adicionado - Versão 2.0 (Relational Features)
 
@@ -284,7 +284,7 @@ func (u *User) BeforeSave() error {
 - Corrige warning do linter: "fmt.Println arg list ends with redundant newline"
 - **Arquivos:** Todos os exemplos
 
-## [1.0.0] - 2024-01-XX
+## [1.0.0] - 2025-11-03
 
 ### Adicionado - Versão 1.x (Usabilidade - Performance e Composição)
 
