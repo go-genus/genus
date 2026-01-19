@@ -200,7 +200,7 @@ func main() {
 | **Insert** | 3,234 ns/op | 1,456 ns/op | **2.2x faster** |
 | **Update** | 2,987 ns/op | 1,289 ns/op | **2.3x faster** |
 
-*Benchmarks run on Apple M1, Go 1.21, PostgreSQL 15. Results may vary.*
+*Benchmarks run on Apple M5, Go 1.21, PostgreSQL 15. Results may vary.*
 
 ### Why Faster?
 
