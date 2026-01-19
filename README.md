@@ -329,7 +329,7 @@ customDB := genus.New(sqlDB, &MyLogger{})
 
 - ✅ **Semantic versioning** — Breaking changes only in major versions
 - ✅ **Test coverage 85%+** — Comprehensive unit and integration tests
-- ✅ **In production since Q2 2024** — Mature, stable codebase
+- ✅ **In production since Q4 2025** — Mature, stable codebase
 - ✅ **Active maintenance** — Regular updates and security patches
 
 ### Community
