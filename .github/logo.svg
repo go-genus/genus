@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 460" width="400" height="460">
+  <defs>
+    <!-- Body feathers - warm brown -->
+    <linearGradient id="bodyMain" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5E3C"/>
+      <stop offset="50%" style="stop-color:#6B4226"/>
+      <stop offset="100%" style="stop-color:#4A2C14"/>
+    </linearGradient>
+
+    <!-- Head feathers -->
+    <linearGradient id="headGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" style="stop-color:#A0724A"/>
+      <stop offset="100%" style="stop-color:#6B4226"/>
+    </linearGradient>
+
+    <!-- Facial disc -->
+    <radialGradient id="faceDisc" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" style="stop-color:#F5DEB3"/>
+      <stop offset="60%" style="stop-color:#E8C88A"/>
+      <stop offset="100%" style="stop-color:#C8A060"/>
+    </radialGradient>
+
+    <!-- Belly / chest white-ish -->
+    <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F0E8D8"/>
+      <stop offset="100%" style="stop-color:#D8C8A8"/>
+    </linearGradient>
+
+    <!-- Wing dark brown -->
+    <linearGradient id="wingL" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7A4F2A"/>
+      <stop offset="100%" style="stop-color:#3A2010"/>
+    </linearGradient>
+    <linearGradient id="wingR" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7A4F2A"/>
+      <stop offset="100%" style="stop-color:#3A2010"/>
+    </linearGradient>
+
+    <!-- Eye iris - amber/orange -->
+    <radialGradient id="irisGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" style="stop-color:#FFD040"/>
+      <stop offset="40%" style="stop-color:#F0A000"/>
+      <stop offset="100%" style="stop-color:#C06800"/>
+    </radialGradient>
+
+    <!-- T-shirt white -->
+    <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#E8EEF4"/>
+    </linearGradient>
+
+    <!-- Shirt shadow folds -->
+    <linearGradient id="shirtFold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#D0D8E4"/>
+      <stop offset="30%" style="stop-color:#FFFFFF"/>
+      <stop offset="70%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#D0D8E4"/>
+    </linearGradient>
+
+    <!-- Beak -->
+    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8B040"/>
+      <stop offset="100%" style="stop-color:#B07820"/>
+    </linearGradient>
+
+    <!-- Talon -->
+    <linearGradient id="talonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B6030"/>
+      <stop offset="100%" style="stop-color:#5A3C18"/>
+    </linearGradient>
+
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#1A0A00" flood-opacity="0.35"/>
+    </filter>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#2A1000" flood-opacity="0.3"/>
+    </filter>
+    <filter id="eyeShine" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Wing feather accent lines clipping -->
+    <clipPath id="wingLClip">
+      <path d="M 80,200 Q 30,190 18,260 Q 10,320 40,360 Q 60,390 95,370 Q 115,355 118,320 L 120,240 Z"/>
+    </clipPath>
+    <clipPath id="wingRClip">
+      <path d="M 320,200 Q 370,190 382,260 Q 390,320 360,360 Q 340,390 305,370 Q 285,355 282,320 L 280,240 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ======= WINGS (behind body) ======= -->
+  <!-- Left wing -->
+  <path d="M 80,200 Q 28,188 16,262 Q 8,322 40,362 Q 62,392 96,372 Q 118,356 120,318 L 122,235 Z"
+        fill="url(#wingL)" filter="url(#shadow)"/>
+  <!-- Wing feather layers left -->
+  <path d="M 40,362 Q 55,340 70,310 Q 80,285 86,255" fill="none" stroke="#5A3818" stroke-width="3" opacity="0.7" clip-path="url(#wingLClip)"/>
+  <path d="M 30,340 Q 45,315 60,285 Q 72,260 80,235" fill="none" stroke="#5A3818" stroke-width="2.5" opacity="0.6" clip-path="url(#wingLClip)"/>
+  <path d="M 22,318 Q 36,292 52,262 Q 64,240 75,220" fill="none" stroke="#5A3818" stroke-width="2" opacity="0.5" clip-path="url(#wingLClip)"/>
+  <!-- Wing highlight edge -->
+  <path d="M 80,200 Q 28,188 16,262 Q 8,322 40,362" fill="none" stroke="#A06838" stroke-width="2" opacity="0.5"/>
+
+  <!-- Right wing -->
+  <path d="M 320,200 Q 372,188 384,262 Q 392,322 360,362 Q 338,392 304,372 Q 282,356 280,318 L 278,235 Z"
+        fill="url(#wingR)" filter="url(#shadow)"/>
+  <!-- Wing feather layers right -->
+  <path d="M 360,362 Q 345,340 330,310 Q 320,285 314,255" fill="none" stroke="#5A3818" stroke-width="3" opacity="0.7" clip-path="url(#wingRClip)"/>
+  <path d="M 370,340 Q 355,315 340,285 Q 328,260 320,235" fill="none" stroke="#5A3818" stroke-width="2.5" opacity="0.6" clip-path="url(#wingRClip)"/>
+  <path d="M 378,318 Q 364,292 348,262 Q 336,240 325,220" fill="none" stroke="#5A3818" stroke-width="2" opacity="0.5" clip-path="url(#wingRClip)"/>
+  <!-- Wing highlight edge -->
+  <path d="M 320,200 Q 372,188 384,262 Q 392,322 360,362" fill="none" stroke="#A06838" stroke-width="2" opacity="0.5"/>
+
+  <!-- ======= BODY ======= -->
+  <ellipse cx="200" cy="310" rx="100" ry="115" fill="url(#bodyMain)" filter="url(#shadow)"/>
+
+  <!-- Body feather texture -->
+  <path d="M 115,270 Q 158,258 200,260 Q 242,258 285,270" fill="none" stroke="#4A2C14" stroke-width="2" opacity="0.5"/>
+  <path d="M 108,290 Q 154,276 200,278 Q 246,276 292,290" fill="none" stroke="#4A2C14" stroke-width="2" opacity="0.45"/>
+  <path d="M 106,310 Q 153,295 200,297 Q 247,295 294,310" fill="none" stroke="#4A2C14" stroke-width="2" opacity="0.4"/>
+  <path d="M 108,330 Q 154,315 200,317 Q 246,315 292,330" fill="none" stroke="#4A2C14" stroke-width="2" opacity="0.35"/>
+  <path d="M 112,350 Q 156,337 200,339 Q 244,337 288,350" fill="none" stroke="#4A2C14" stroke-width="2" opacity="0.3"/>
+
+  <!-- ======= T-SHIRT ======= -->
+  <!-- Main shirt body -->
+  <path d="M 118,305 Q 118,265 132,248 Q 148,235 200,234 Q 252,235 268,248 Q 282,265 282,305 L 282,390 Q 282,408 265,412 L 135,412 Q 118,408 118,390 Z"
+        fill="url(#shirtFold)"/>
+  <!-- Shirt collar (V-neck) -->
+  <path d="M 168,248 Q 200,270 232,248" fill="none" stroke="#D0D8E4" stroke-width="2"/>
+  <!-- Shirt fold lines (subtle) -->
+  <line x1="155" y1="280" x2="148" y2="400" stroke="#C8D0DC" stroke-width="1" opacity="0.6"/>
+  <line x1="245" y1="280" x2="252" y2="400" stroke="#C8D0DC" stroke-width="1" opacity="0.6"/>
+  <!-- Sleeve left -->
+  <path d="M 118,280 Q 100,272 90,290 Q 84,305 96,315 Q 108,322 120,312 Z"
+        fill="url(#shirtGrad)"/>
+  <path d="M 118,280 Q 100,272 90,290 Q 84,305 96,315" fill="none" stroke="#C8D0DC" stroke-width="1.5"/>
+  <!-- Sleeve right -->
+  <path d="M 282,280 Q 300,272 310,290 Q 316,305 304,315 Q 292,322 280,312 Z"
+        fill="url(#shirtGrad)"/>
+  <path d="M 282,280 Q 300,272 310,290 Q 316,305 304,315" fill="none" stroke="#C8D0DC" stroke-width="1.5"/>
+
+  <!-- ======= "genus" TEXT ON SHIRT ======= -->
+  <text
+    x="200"
+    y="358"
+    font-family="'Georgia', 'Palatino Linotype', serif"
+    font-size="42"
+    font-weight="700"
+    font-style="italic"
+    fill="#1A5CB8"
+    text-anchor="middle"
+    letter-spacing="-1"
+    filter="url(#softShadow)"
+  >genus</text>
+
+  <!-- ======= HEAD ======= -->
+  <ellipse cx="200" cy="178" rx="105" ry="100" fill="url(#headGrad)" filter="url(#shadow)"/>
+
+  <!-- EAR TUFTS -->
+  <!-- Left tuft -->
+  <path d="M 128,100 Q 118,68 126,42 Q 132,22 146,36 Q 158,50 152,80 Q 148,96 138,104 Z"
+        fill="#6B4226"/>
+  <path d="M 134,98 Q 126,70 130,46" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.6"/>
+  <path d="M 142,100 Q 136,72 138,48" fill="none" stroke="#4A2C14" stroke-width="1.5" opacity="0.5"/>
+  <!-- Tuft highlight -->
+  <path d="M 128,100 Q 120,72 128,46 Q 133,26 144,38" fill="none" stroke="#A07840" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Right tuft -->
+  <path d="M 272,100 Q 282,68 274,42 Q 268,22 254,36 Q 242,50 248,80 Q 252,96 262,104 Z"
+        fill="#6B4226"/>
+  <path d="M 266,98 Q 274,70 270,46" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.6"/>
+  <path d="M 258,100 Q 264,72 262,48" fill="none" stroke="#4A2C14" stroke-width="1.5" opacity="0.5"/>
+  <path d="M 272,100 Q 280,72 272,46 Q 267,26 256,38" fill="none" stroke="#A07840" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ======= FACIAL DISC ======= -->
+  <ellipse cx="200" cy="188" rx="82" ry="76" fill="url(#faceDisc)"/>
+  <!-- Disc border/rim -->
+  <ellipse cx="200" cy="188" rx="82" ry="76" fill="none" stroke="#B08040" stroke-width="3" opacity="0.5"/>
+  <ellipse cx="200" cy="188" rx="76" ry="70" fill="none" stroke="#D4A868" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ======= EYES ======= -->
+  <!-- Left eye socket (dark ring) -->
+  <circle cx="162" cy="180" r="32" fill="#2A1808"/>
+  <!-- Right eye socket -->
+  <circle cx="238" cy="180" r="32" fill="#2A1808"/>
+
+  <!-- Left iris -->
+  <circle cx="162" cy="180" r="26" fill="url(#irisGrad)"/>
+  <!-- Left iris detail rings -->
+  <circle cx="162" cy="180" r="20" fill="none" stroke="#C07800" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="162" cy="180" r="14" fill="none" stroke="#E09000" stroke-width="1" opacity="0.4"/>
+  <!-- Left pupil -->
+  <circle cx="162" cy="180" r="11" fill="#0D0A06"/>
+  <!-- Left eye catchlights -->
+  <circle cx="155" cy="172" r="5" fill="white" opacity="0.9"/>
+  <circle cx="168" cy="186" r="2.5" fill="white" opacity="0.4"/>
+  <!-- Left eyelid top -->
+  <path d="M 136,168 Q 162,155 188,168" fill="#4A2C14" opacity="0.6"/>
+
+  <!-- Right iris -->
+  <circle cx="238" cy="180" r="26" fill="url(#irisGrad)"/>
+  <!-- Right iris detail rings -->
+  <circle cx="238" cy="180" r="20" fill="none" stroke="#C07800" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="238" cy="180" r="14" fill="none" stroke="#E09000" stroke-width="1" opacity="0.4"/>
+  <!-- Right pupil -->
+  <circle cx="238" cy="180" r="11" fill="#0D0A06"/>
+  <!-- Right eye catchlights -->
+  <circle cx="231" cy="172" r="5" fill="white" opacity="0.9"/>
+  <circle cx="244" cy="186" r="2.5" fill="white" opacity="0.4"/>
+  <!-- Right eyelid top -->
+  <path d="M 212,168 Q 238,155 264,168" fill="#4A2C14" opacity="0.6"/>
+
+  <!-- Eye socket rim highlights -->
+  <circle cx="162" cy="180" r="32" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.5"/>
+  <circle cx="238" cy="180" r="32" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.5"/>
+
+  <!-- ======= BEAK ======= -->
+  <!-- Upper mandible -->
+  <path d="M 182,208 Q 200,202 218,208 Q 214,224 200,232 Q 186,224 182,208 Z"
+        fill="url(#beakGrad)"/>
+  <!-- Beak ridge line -->
+  <path d="M 200,202 Q 200,218 200,232" fill="none" stroke="#C08820" stroke-width="1.5" opacity="0.6"/>
+  <!-- Beak nostril hint -->
+  <ellipse cx="192" cy="210" rx="3" ry="2" fill="#C08020" opacity="0.4"/>
+  <ellipse cx="208" cy="210" rx="3" ry="2" fill="#C08020" opacity="0.4"/>
+  <!-- Beak lower shadow -->
+  <path d="M 186,218 Q 200,228 214,218" fill="none" stroke="#8B6010" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ======= TALONS / FEET ======= -->
+  <!-- Left foot branch -->
+  <path d="M 155,418 Q 145,430 130,438" fill="none" stroke="url(#talonGrad)" stroke-width="10" stroke-linecap="round"/>
+  <!-- Left toes -->
+  <path d="M 138,436 Q 124,442 116,448" fill="none" stroke="#7A4E22" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 138,436 Q 128,446 124,454" fill="none" stroke="#7A4E22" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 138,436 Q 134,448 136,456" fill="none" stroke="#7A4E22" stroke-width="5" stroke-linecap="round"/>
+  <!-- Left talon tips -->
+  <path d="M 116,448 Q 112,452 110,456" fill="none" stroke="#3A2010" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 124,454 Q 121,458 120,462" fill="none" stroke="#3A2010" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M 136,456 Q 134,460 134,464" fill="none" stroke="#3A2010" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Right foot branch -->
+  <path d="M 245,418 Q 255,430 270,438" fill="none" stroke="url(#talonGrad)" stroke-width="10" stroke-linecap="round"/>
+  <!-- Right toes -->
+  <path d="M 262,436 Q 276,442 284,448" fill="none" stroke="#7A4E22" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 262,436 Q 272,446 276,454" fill="none" stroke="#7A4E22" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 262,436 Q 266,448 264,456" fill="none" stroke="#7A4E22" stroke-width="5" stroke-linecap="round"/>
+  <!-- Right talon tips -->
+  <path d="M 284,448 Q 288,452 290,456" fill="none" stroke="#3A2010" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 276,454 Q 279,458 280,462" fill="none" stroke="#3A2010" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M 264,456 Q 266,460 266,464" fill="none" stroke="#3A2010" stroke-width="3" stroke-linecap="round"/>
+</svg>

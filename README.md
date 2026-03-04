@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/go-genus/genus/main/.github/logo.png" alt="Genus Logo" width="120" />
-  <h1 align="center">Genus ORM</h1>
+  <img src="https://raw.githubusercontent.com/go-genus/genus/main/.github/logo.svg" alt="Genus Logo" height="180" />
+</p>
+<h1 align="center">Genus ORM</h1>
   <p align="center">
     <strong>The fastest type-safe ORM for Go</strong>
   </p>
