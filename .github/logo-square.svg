@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 10 280 280" width="500" height="500">
+  <defs>
+    <!-- Head feathers -->
+    <linearGradient id="headGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" style="stop-color:#A0724A"/>
+      <stop offset="100%" style="stop-color:#6B4226"/>
+    </linearGradient>
+
+    <!-- Facial disc -->
+    <radialGradient id="faceDisc" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" style="stop-color:#F5DEB3"/>
+      <stop offset="60%" style="stop-color:#E8C88A"/>
+      <stop offset="100%" style="stop-color:#C8A060"/>
+    </radialGradient>
+
+    <!-- Eye iris - amber/orange -->
+    <radialGradient id="irisGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" style="stop-color:#FFD040"/>
+      <stop offset="40%" style="stop-color:#F0A000"/>
+      <stop offset="100%" style="stop-color:#C06800"/>
+    </radialGradient>
+
+    <!-- Beak -->
+    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8B040"/>
+      <stop offset="100%" style="stop-color:#B07820"/>
+    </linearGradient>
+
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-20%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#1A0A00" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- ======= HEAD ======= -->
+  <ellipse cx="200" cy="178" rx="105" ry="100" fill="url(#headGrad)" filter="url(#shadow)"/>
+
+  <!-- EAR TUFTS -->
+  <!-- Left tuft -->
+  <path d="M 128,100 Q 118,68 126,42 Q 132,22 146,36 Q 158,50 152,80 Q 148,96 138,104 Z"
+        fill="#6B4226"/>
+  <path d="M 134,98 Q 126,70 130,46" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.6"/>
+  <path d="M 142,100 Q 136,72 138,48" fill="none" stroke="#4A2C14" stroke-width="1.5" opacity="0.5"/>
+  <path d="M 128,100 Q 120,72 128,46 Q 133,26 144,38" fill="none" stroke="#A07840" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Right tuft -->
+  <path d="M 272,100 Q 282,68 274,42 Q 268,22 254,36 Q 242,50 248,80 Q 252,96 262,104 Z"
+        fill="#6B4226"/>
+  <path d="M 266,98 Q 274,70 270,46" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.6"/>
+  <path d="M 258,100 Q 264,72 262,48" fill="none" stroke="#4A2C14" stroke-width="1.5" opacity="0.5"/>
+  <path d="M 272,100 Q 280,72 272,46 Q 267,26 256,38" fill="none" stroke="#A07840" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ======= FACIAL DISC ======= -->
+  <ellipse cx="200" cy="188" rx="82" ry="76" fill="url(#faceDisc)"/>
+  <ellipse cx="200" cy="188" rx="82" ry="76" fill="none" stroke="#B08040" stroke-width="3" opacity="0.5"/>
+  <ellipse cx="200" cy="188" rx="76" ry="70" fill="none" stroke="#D4A868" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- ======= EYES ======= -->
+  <!-- Left eye socket -->
+  <circle cx="162" cy="180" r="32" fill="#2A1808"/>
+  <!-- Right eye socket -->
+  <circle cx="238" cy="180" r="32" fill="#2A1808"/>
+
+  <!-- Left iris -->
+  <circle cx="162" cy="180" r="26" fill="url(#irisGrad)"/>
+  <circle cx="162" cy="180" r="20" fill="none" stroke="#C07800" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="162" cy="180" r="14" fill="none" stroke="#E09000" stroke-width="1" opacity="0.4"/>
+  <!-- Left pupil -->
+  <circle cx="162" cy="180" r="11" fill="#0D0A06"/>
+  <!-- Left eye catchlights -->
+  <circle cx="155" cy="172" r="5" fill="white" opacity="0.9"/>
+  <circle cx="168" cy="186" r="2.5" fill="white" opacity="0.4"/>
+  <!-- Left eyelid top -->
+  <path d="M 136,168 Q 162,155 188,168" fill="#4A2C14" opacity="0.6"/>
+
+  <!-- Right iris -->
+  <circle cx="238" cy="180" r="26" fill="url(#irisGrad)"/>
+  <circle cx="238" cy="180" r="20" fill="none" stroke="#C07800" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="238" cy="180" r="14" fill="none" stroke="#E09000" stroke-width="1" opacity="0.4"/>
+  <!-- Right pupil -->
+  <circle cx="238" cy="180" r="11" fill="#0D0A06"/>
+  <!-- Right eye catchlights -->
+  <circle cx="231" cy="172" r="5" fill="white" opacity="0.9"/>
+  <circle cx="244" cy="186" r="2.5" fill="white" opacity="0.4"/>
+  <!-- Right eyelid top -->
+  <path d="M 212,168 Q 238,155 264,168" fill="#4A2C14" opacity="0.6"/>
+
+  <!-- Eye socket rim highlights -->
+  <circle cx="162" cy="180" r="32" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.5"/>
+  <circle cx="238" cy="180" r="32" fill="none" stroke="#8B5E3C" stroke-width="2" opacity="0.5"/>
+
+  <!-- ======= BEAK ======= -->
+  <path d="M 182,208 Q 200,202 218,208 Q 214,224 200,232 Q 186,224 182,208 Z"
+        fill="url(#beakGrad)"/>
+  <path d="M 200,202 Q 200,218 200,232" fill="none" stroke="#C08820" stroke-width="1.5" opacity="0.6"/>
+  <ellipse cx="192" cy="210" rx="3" ry="2" fill="#C08020" opacity="0.4"/>
+  <ellipse cx="208" cy="210" rx="3" ry="2" fill="#C08020" opacity="0.4"/>
+  <path d="M 186,218 Q 200,228 214,218" fill="none" stroke="#8B6010" stroke-width="1.5" opacity="0.5"/>
+</svg>
