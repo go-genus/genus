@@ -14,10 +14,10 @@ db.Where("nme = ?", "Alice").Find(&users)               Where(UserFields.Name.Eq
 
 **Used in production processing 25M+ transactions/month at financial institutions.**
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/GabrielOnRails/genus.svg)](https://pkg.go.dev/github.com/GabrielOnRails/genus)
-[![Go Report Card](https://goreportcard.com/badge/github.com/GabrielOnRails/genus)](https://goreportcard.com/report/github.com/GabrielOnRails/genus)
+[![Go Reference](https://pkg.go.dev/badge/github.com/go-genus/genus.svg)](https://pkg.go.dev/github.com/go-genus/genus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-genus/genus)](https://goreportcard.com/report/github.com/go-genus/genus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/GabrielOnRails/genus?style=social)](https://github.com/GabrielOnRails/genus)
+[![GitHub Stars](https://img.shields.io/github/stars/GabrielOnRails/genus?style=social)](https://github.com/go-genus/genus)
 
 ---
 
@@ -72,13 +72,13 @@ users, err := genus.Table[User](db).
 
 ```bash
 # Latest version
-go get github.com/GabrielOnRails/genus@latest
+go get github.com/go-genus/genus@latest
 
 # Specific version (recommended for production)
-go get github.com/GabrielOnRails/genus@v7.0.0
+go get github.com/go-genus/genus@v7.0.0
 
 # Optional: CLI for code generation
-go install github.com/GabrielOnRails/genus/cmd/genus@latest
+go install github.com/go-genus/genus/cmd/genus@latest
 ```
 
 **Requirements:** Go 1.21+
@@ -90,7 +90,7 @@ go install github.com/GabrielOnRails/genus/cmd/genus@latest
 ### Step 1: Define Your Model
 
 ```go
-import "github.com/GabrielOnRails/genus/core"
+import "github.com/go-genus/genus/core"
 
 type User struct {
     core.Model              // Embedded: ID, CreatedAt, UpdatedAt
@@ -105,7 +105,7 @@ type User struct {
 
 **Option A: Manual (recommended for small projects)**
 ```go
-import "github.com/GabrielOnRails/genus/query"
+import "github.com/go-genus/genus/query"
 
 var UserFields = struct {
     ID       query.Int64Field
@@ -131,7 +131,7 @@ genus generate ./models
 ### Step 3: Query with Type-Safety
 
 ```go
-import "github.com/GabrielOnRails/genus"
+import "github.com/go-genus/genus"
 
 func main() {
     ctx := context.Background()
@@ -158,7 +158,7 @@ func main() {
 }
 ```
 
-👉 **Next Steps:** [Getting Started Guide](./docs/GETTING_STARTED.md) | [API Reference](https://pkg.go.dev/github.com/GabrielOnRails/genus)
+👉 **Next Steps:** [Getting Started Guide](./docs/GETTING_STARTED.md) | [API Reference](https://pkg.go.dev/github.com/go-genus/genus)
 
 ---
 
@@ -247,7 +247,7 @@ You get **type safety AND performance**:
 ### Run Benchmarks Yourself
 
 ```bash
-git clone https://github.com/GabrielOnRails/genus
+git clone https://github.com/go-genus/genus
 cd genus
 go test -bench=. -benchmem ./benchmarks/...
 ```
@@ -398,8 +398,8 @@ customDB := genus.New(sqlDB, &MyLogger{})
 
 ### Community
 
-- 💬 [GitHub Discussions](https://github.com/GabrielOnRails/genus/discussions) — Questions and ideas
-- 🐛 [GitHub Issues](https://github.com/GabrielOnRails/genus/issues) — Bug reports
+- 💬 [GitHub Discussions](https://github.com/go-genus/genus/discussions) — Questions and ideas
+- 🐛 [GitHub Issues](https://github.com/go-genus/genus/issues) — Bug reports
 - 🤝 [Contributing Guide](./CONTRIBUTING.md) — How to contribute
 
 ---
@@ -527,7 +527,7 @@ posts, _ := genus.Table[Post](db).
 ### AutoMigrate (Development)
 
 ```go
-import "github.com/GabrielOnRails/genus/migrate"
+import "github.com/go-genus/genus/migrate"
 
 migrate.AutoMigrate(ctx, db, dialect, User{}, Product{})
 ```
@@ -682,9 +682,9 @@ db.DB().ForceDelete(ctx, user)  // DELETE FROM users
 
 ```go
 import (
-    "github.com/GabrielOnRails/genus/dialects/postgres"
-    "github.com/GabrielOnRails/genus/dialects/mysql"
-    "github.com/GabrielOnRails/genus/dialects/sqlite"
+    "github.com/go-genus/genus/dialects/postgres"
+    "github.com/go-genus/genus/dialects/mysql"
+    "github.com/go-genus/genus/dialects/sqlite"
 )
 
 // PostgreSQL
@@ -708,7 +708,7 @@ db, _ := genus.Open("mysql", dsn)     // Auto-detects MySQL
 db, _ := genus.Open("sqlite3", dsn)   // Auto-detects SQLite
 
 // DSN-based detection
-import "github.com/GabrielOnRails/genus/dialects"
+import "github.com/go-genus/genus/dialects"
 
 driver := dialects.DetectDriverFromDSN("postgres://localhost/mydb")  // "postgres"
 dialect := dialects.DetectDialectFromDSN("mysql://localhost/mydb")   // MySQL dialect
@@ -721,7 +721,7 @@ dialect := dialects.DetectDialectFromDSN("mysql://localhost/mydb")   // MySQL di
 Configure connection pool for optimal performance:
 
 ```go
-import "github.com/GabrielOnRails/genus/core"
+import "github.com/go-genus/genus/core"
 
 // Default configuration (recommended for most apps)
 db, _ := genus.OpenWithConfig("postgres", dsn, core.DefaultPoolConfig())
@@ -871,7 +871,7 @@ users, _ := genus.Table[User](db).
 Reduce database load with query-level caching:
 
 ```go
-import "github.com/GabrielOnRails/genus/cache"
+import "github.com/go-genus/genus/cache"
 
 // Create in-memory cache
 memCache := cache.NewInMemoryCache(10000)  // 10k entries max
@@ -976,7 +976,7 @@ expensiveProducts, _ := genus.Table[Product](db).
 Horizontal partitioning across multiple database instances:
 
 ```go
-import "github.com/GabrielOnRails/genus/sharding"
+import "github.com/go-genus/genus/sharding"
 
 // Configure shards
 config := genus.ShardConfig{
@@ -1007,7 +1007,7 @@ orders, _ := genus.ShardedTable[Order](db).Find(ctx)
 Distributed tracing for observability:
 
 ```go
-import "github.com/GabrielOnRails/genus/tracing"
+import "github.com/go-genus/genus/tracing"
 
 // Simple tracer for debugging
 simpleTracer := tracing.NewSimpleTracer(tracing.SimpleTracerConfig{
@@ -1049,7 +1049,7 @@ db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
 - 📖 [Getting Started](./docs/GETTING_STARTED.md) — First steps with Genus
 - 🏗️ [Architecture](./docs/ARCHITECTURE.md) — How Genus works internally
 - 🔄 [Migration from GORM](./docs/MIGRATION.md) — Switching from GORM to Genus
-- 📚 [API Reference](https://pkg.go.dev/github.com/GabrielOnRails/genus) — Full API documentation
+- 📚 [API Reference](https://pkg.go.dev/github.com/go-genus/genus) — Full API documentation
 
 ---
 
@@ -1209,7 +1209,7 @@ Contributions are welcome! Please open an issue or PR.
 ### Initial Setup
 
 ```bash
-git clone https://github.com/GabrielOnRails/genus
+git clone https://github.com/go-genus/genus
 cd genus
 ./scripts/setup-hooks.sh  # Install git hooks
 ```
@@ -1240,5 +1240,5 @@ MIT License — see [LICENSE](./LICENSE) for details.
 <p align="center">
   <strong>⭐ Star us on GitHub if Genus helps you ship faster!</strong>
   <br>
-  <a href="https://github.com/GabrielOnRails/genus">github.com/GabrielOnRails/genus</a>
+  <a href="https://github.com/go-genus/genus">github.com/go-genus/genus</a>
 </p>
