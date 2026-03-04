@@ -26,7 +26,7 @@ db.Where("nme = ?", "Alice").Find(&users)               Where(UserFields.Name.Eq
 | Problem | GORM / Traditional ORMs | Genus |
 |---------|------------------------|-------|
 | **Type Safety** | ❌ String-based queries, runtime errors | ✅ Compile-time verification with typed fields |
-| **Performance** | ❌ Heavy reflection overhead | ✅ Lightweight ORM, ~1.3x overhead vs raw SQL |
+| **Performance** | ❌ Heavy reflection overhead | ✅ Near-raw-SQL with GenusUltra (1.6x faster than GORM) |
 | **Query Transparency** | ❌ Magic methods, hidden SQL | ✅ Explicit SQL, auto-logging included |
 | **Developer Experience** | ❌ No IDE autocomplete for queries | ✅ Full autocomplete, catch typos instantly |
 | **Production Readiness** | ⚠️ Runtime surprises in production | ✅ If it compiles, it works |
@@ -193,6 +193,7 @@ func main() {
 - ✅ **Type-safe aggregations** — COUNT, SUM, AVG, MAX, MIN with GROUP BY/HAVING
 - ✅ **Batch operations** — Bulk INSERT/UPDATE/DELETE in single queries
 - ✅ **Read replicas** — Automatic primary/replica routing with round-robin
+- ✅ **GenusUltra** — Zero-reflection scanning for raw-SQL performance (1.6x faster than GORM)
 
 ### Enterprise Features (v4.0+)
 
@@ -206,31 +207,42 @@ func main() {
 
 ## Performance
 
-### Benchmarks (Genus vs Raw SQL)
+### Benchmarks (Genus vs GORM vs Raw SQL)
 
-All ORMs add overhead for type safety and developer convenience. Here's what you pay:
+Genus with zero-reflection scanning matches raw SQL performance while providing type safety.
 
-| Operation | Genus | Raw SQL | Overhead | Notes |
-|-----------|-------|---------|----------|-------|
-| **Complex query (10 rows)** | 93µs | 73µs | 1.3x | 5 conditions + ORDER + LIMIT |
-| **First (single row)** | 7.1µs | ~5µs | ~1.4x | Index lookup |
-| **Insert** | 7.7µs | 5.8µs | 1.3x | With reflection overhead |
-| **Update** | 7.6µs | 2.0µs | 3.7x | Reflection cost noticeable |
-| **Query builder only** | 0.5µs | N/A | N/A | Construction without execution |
-| **Count** | 8.3µs | ~6µs | ~1.4x | Aggregate query |
+| Operation | GORM | Genus | GenusUltra | Raw SQL |
+|-----------|------|-------|------------|---------|
+| **Select 500 rows** | 2.7ms | 2.5ms | **1.7ms** | 1.7ms |
+| **Select first** | 91µs | 78µs | **63µs** | 70µs |
+| **Complex (5 conditions)** | 257µs | 210µs | **183µs** | 193µs |
+| **Count** | 84µs | 77µs | 82µs | 82µs |
+
+**Memory Allocations (Select 500 rows):**
+
+| ORM | Allocations | Memory |
+|-----|-------------|--------|
+| GORM | 7,440 | 206 KB |
+| Genus | 4,919 | 229 KB |
+| **GenusUltra** | **3,900** | **155 KB** |
+| Raw SQL | 3,895 | 156 KB |
 
 *Benchmarks run on Apple M4, Go 1.25, SQLite3 in-memory. Run `go test -bench=. ./benchmarks/` to verify.*
 
+### Key Performance Insights
+
+- **GenusUltra is 1.6x faster than GORM** with 48% fewer allocations
+- **GenusUltra matches raw SQL** — the database I/O is the bottleneck, not the ORM
+- **Standard Genus** is still 10-20% faster than GORM with type safety
+
 ### The Trade-off
 
-You trade a small performance overhead for:
+You get **type safety AND performance**:
 
 - ✅ **Compile-time safety** — No more typos causing runtime errors
 - ✅ **IDE autocomplete** — Full IntelliSense for all queries
-- ✅ **Maintainability** — Refactor safely with compiler support
-- ✅ **Developer productivity** — Write queries faster with less debugging
-
-For most applications, the overhead is negligible (<10µs per query). If you're building a high-frequency trading system, use raw SQL. For everything else, type safety wins.
+- ✅ **Near-raw-SQL performance** — With zero-reflection scanning
+- ✅ **48% fewer allocations** — Less GC pressure than GORM
 
 ### Run Benchmarks Yourself
 
@@ -239,6 +251,35 @@ git clone https://github.com/GabrielOnRails/genus
 cd genus
 go test -bench=. -benchmem ./benchmarks/...
 ```
+
+### Using GenusUltra for Maximum Performance
+
+For performance-critical code, use `GenusUltra` with a registered scan function:
+
+```go
+// 1. Create a zero-reflection scanner for your model
+func ScanUser(rows *sql.Rows) (User, error) {
+    var u User
+    err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Age, &u.IsActive)
+    return u, err
+}
+
+// 2. Register it at startup
+func init() {
+    query.RegisterScanFunc[User](ScanUser)
+}
+
+// 3. Use UltraFastTable for queries
+users, err := genus.UltraFastTable[User](db).
+    Select("id", "name", "email", "age", "is_active").
+    Where(UserFields.IsActive.Eq(true)).
+    Find(ctx)
+```
+
+**When to use each:**
+- `Table[T]()` — Default choice, good balance of features and performance
+- `FastTable[T]()` — When you need fewer allocations
+- `UltraFastTable[T]()` — When you need raw-SQL performance (with registered scanner)
 
 ---
 

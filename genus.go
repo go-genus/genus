@@ -160,6 +160,45 @@ func Table[T any](g *Genus) *query.Builder[T] {
 	return query.NewBuilder[T](g.db.Executor(), g.db.Dialect(), g.db.Logger(), tableName)
 }
 
+// FastTable cria um query builder otimizado para alta performance.
+// Use quando performance é crítica. Tem menos features que Table mas é mais rápido.
+//
+// Otimizações:
+//   - Cache de prepared statements
+//   - Zero-copy string operations
+//   - Pre-alocação de slices
+//   - Cache de field maps
+//
+// Exemplo:
+//
+//	users, _ := genus.FastTable[User](db).
+//	    Where(UserFields.IsActive.Eq(true)).
+//	    Find(ctx)
+func FastTable[T any](g *Genus) *query.FastBuilder[T] {
+	var model T
+	tableName := getTableName(model)
+	return query.NewFastBuilder[T](g.db.Executor(), g.db.Dialect(), tableName)
+}
+
+// UltraFastTable creates a zero-reflection query builder for maximum performance.
+// For best results, register a scan function with query.RegisterScanFunc[T]() at init time.
+// Without a registered scan function, it falls back to reflection-based scanning.
+//
+// Example with generated scanner:
+//
+//	// In init or main:
+//	query.RegisterScanFunc[User](ScanUser)
+//
+//	// Then use:
+//	users, _ := genus.UltraFastTable[User](db).
+//	    Where(UserFields.IsActive.Eq(true)).
+//	    Find(ctx)
+func UltraFastTable[T any](g *Genus) *query.UltraFastBuilder[T] {
+	var model T
+	tableName := getTableName(model)
+	return query.NewUltraFastBuilder[T](g.db.Executor(), g.db.Dialect(), tableName)
+}
+
 // getTableName obtém o nome da tabela para um modelo.
 func getTableName(model interface{}) string {
 	if tn, ok := model.(core.TableNamer); ok {
