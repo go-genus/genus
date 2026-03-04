@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [7.0.0] - 2026-03-04
 
-### Adicionado - Versão 7.0 (Cloud Native & Developer Experience)
+### Added - Version 7.0 (Cloud Native & Developer Experience)
 
 #### 1. Kubernetes Health Checks
 
@@ -295,9 +295,9 @@ $ genus playground --port 8765 --dsn "postgres://localhost/mydb"
 
 ---
 
-## [6.0.0] - 2026-03-04
+## [6.0.0] - 2026-03-01
 
-### Adicionado - Versão 6.0 (Query Intelligence & Advanced Patterns)
+### Added - Version 6.0 (Query Intelligence & Advanced Patterns)
 
 #### 1. Automatic Query Optimization
 
@@ -665,9 +665,9 @@ user, _ = cqrs.Request[GetUserQuery, *User](ctx, mediator, GetUserQuery{ID: "123
 
 ---
 
-## [5.0.0] - 2026-03-04
+## [5.0.0] - 2026-02-18
 
-### Adicionado - Versão 5.0 (Production-Ready Features)
+### Added - Version 5.0 (Production-Ready Features)
 
 #### 1. Cursor-Based Pagination
 
@@ -1159,9 +1159,9 @@ sub, _ = manager.Watch(ctx, "users", core.WatchConfig{
 
 ---
 
-## [4.0.0] - 2026-03-04
+## [4.0.0] - 2026-02-05
 
-### Adicionado - Versão 4.0 (Enterprise Features)
+### Added - Version 4.0 (Enterprise Features)
 
 #### 1. Query Caching
 
@@ -1461,9 +1461,9 @@ db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
 
 ---
 
+## [3.0.0] - 2026-01-20
 
-
-### Adicionado - Versão 3.0 (Performance & Scaling Features)
+### Added - Version 3.0 (Performance & Scaling Features)
 
 #### 1. Auto-detect Dialect
 
