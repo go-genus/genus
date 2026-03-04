@@ -75,7 +75,7 @@ users, err := genus.Table[User](db).
 go get github.com/GabrielOnRails/genus@latest
 
 # Specific version (recommended for production)
-go get github.com/GabrielOnRails/genus@v2.0.0
+go get github.com/GabrielOnRails/genus@v4.0.0
 
 # Optional: CLI for code generation
 go install github.com/GabrielOnRails/genus/cmd/genus@latest
@@ -185,6 +185,22 @@ func main() {
 - ✅ **Optional[T]** — Clean nullable handling without `sql.Null*`
 - ✅ **Code generation** — Auto-generate typed fields from structs
 - ✅ **Migrations** — AutoMigrate + versioned manual migrations
+
+### Performance & Scaling Features (v3.0+)
+
+- ✅ **Auto-detect dialect** — No manual dialect configuration needed
+- ✅ **Connection pooling** — Configurable pool with sensible defaults
+- ✅ **Type-safe aggregations** — COUNT, SUM, AVG, MAX, MIN with GROUP BY/HAVING
+- ✅ **Batch operations** — Bulk INSERT/UPDATE/DELETE in single queries
+- ✅ **Read replicas** — Automatic primary/replica routing with round-robin
+
+### Enterprise Features (v4.0+)
+
+- ✅ **Query caching** — In-memory LRU cache with TTL
+- ✅ **Polymorphic relationships** — Comments that belong to Posts or Articles
+- ✅ **Type-safe subqueries** — IN, NOT IN, EXISTS, NOT EXISTS, correlated
+- ✅ **Database sharding** — Modulo and consistent hash strategies
+- ✅ **OpenTelemetry integration** — Distributed tracing for queries
 
 ---
 
@@ -633,6 +649,351 @@ g := genus.New(db, mysql.New(), logger)
 g := genus.New(db, sqlite.New(), logger)
 ```
 
+### Auto-detect Dialect (v3.0+)
+
+Dialect is automatically detected from driver name:
+
+```go
+// Driver-based detection (recommended)
+db, _ := genus.Open("postgres", dsn)  // Auto-detects PostgreSQL
+db, _ := genus.Open("mysql", dsn)     // Auto-detects MySQL
+db, _ := genus.Open("sqlite3", dsn)   // Auto-detects SQLite
+
+// DSN-based detection
+import "github.com/GabrielOnRails/genus/dialects"
+
+driver := dialects.DetectDriverFromDSN("postgres://localhost/mydb")  // "postgres"
+dialect := dialects.DetectDialectFromDSN("mysql://localhost/mydb")   // MySQL dialect
+```
+
+---
+
+## Connection Pooling (v3.0+)
+
+Configure connection pool for optimal performance:
+
+```go
+import "github.com/GabrielOnRails/genus/core"
+
+// Default configuration (recommended for most apps)
+db, _ := genus.OpenWithConfig("postgres", dsn, core.DefaultPoolConfig())
+// MaxOpenConns: 25, MaxIdleConns: 10, ConnMaxLifetime: 30m
+
+// High performance (for high-load applications)
+db, _ := genus.OpenWithConfig("postgres", dsn, core.HighPerformancePoolConfig())
+// MaxOpenConns: 100, MaxIdleConns: 50, ConnMaxLifetime: 1h
+
+// Minimal (for development/testing)
+db, _ := genus.OpenWithConfig("postgres", dsn, core.MinimalPoolConfig())
+// MaxOpenConns: 5, MaxIdleConns: 2, ConnMaxLifetime: 15m
+
+// Custom configuration with fluent API
+config := core.DefaultPoolConfig().
+    WithMaxOpenConns(50).
+    WithMaxIdleConns(25).
+    WithConnMaxLifetime(time.Hour)
+db, _ := genus.OpenWithConfig("postgres", dsn, config)
+```
+
+---
+
+## Aggregations (v3.0+)
+
+Type-safe aggregation operations:
+
+```go
+// Simple count
+result, _ := genus.Table[User](db).
+    Where(UserFields.IsActive.Eq(true)).
+    Aggregate().
+    CountAll().
+    One(ctx)
+fmt.Println(result.Int64("count"))  // 42
+
+// Multiple aggregations
+result, _ := genus.Table[Order](db).
+    Where(OrderFields.Status.Eq("paid")).
+    Aggregate().
+    CountAll().
+    Sum("total").
+    Avg("total").
+    Max("total").
+    Min("total").
+    One(ctx)
+
+fmt.Printf("Count: %d, Sum: %.2f, Avg: %.2f\n",
+    result.Int64("count"),
+    result.Float64("sum_total"),
+    result.Float64("avg_total"))
+
+// GROUP BY with HAVING
+results, _ := genus.Table[Order](db).
+    Aggregate().
+    Sum("total").
+    CountAll().
+    GroupBy("user_id").
+    Having(query.Condition{Field: "COUNT(*)", Operator: query.OpGt, Value: 5}).
+    OrderByDesc("sum_total").
+    All(ctx)
+
+for _, r := range results {
+    fmt.Printf("User %s: total=%.2f, orders=%d\n",
+        r.String("user_id"),
+        r.Float64("sum_total"),
+        r.Int64("count"))
+}
+```
+
+---
+
+## Batch Operations (v3.0+)
+
+Efficient bulk operations with single queries:
+
+```go
+// Batch Insert (single INSERT with multiple VALUES)
+users := []*User{
+    {Name: "Alice", Email: "alice@example.com"},
+    {Name: "Bob", Email: "bob@example.com"},
+    {Name: "Charlie", Email: "charlie@example.com"},
+}
+err := db.DB().BatchInsert(ctx, users)
+// SQL: INSERT INTO users (name, email) VALUES ('Alice', ...), ('Bob', ...), ('Charlie', ...)
+
+// Batch Insert with custom configuration
+config := core.BatchConfig{
+    BatchSize: 50,    // Process 50 records at a time
+    SkipHooks: true,  // Skip BeforeSave/AfterCreate hooks for performance
+}
+err = db.DB().BatchInsertWithConfig(ctx, users, config)
+
+// Batch Update (uses transaction for atomicity)
+for _, u := range users {
+    u.Name = u.Name + " Updated"
+}
+err = db.DB().BatchUpdate(ctx, users)
+
+// Batch Delete (single DELETE with WHERE IN)
+err = db.DB().BatchDelete(ctx, users)
+// SQL: DELETE FROM users WHERE id IN (1, 2, 3)
+
+// Delete by IDs directly
+err = db.DB().BatchDeleteByIDs(ctx, "users", []int64{1, 2, 3})
+```
+
+---
+
+## Read Replicas (v3.0+)
+
+Scale reads with automatic primary/replica routing:
+
+```go
+// Configure replicas
+config := genus.ReplicaConfig{
+    PrimaryDSN: "postgres://user:pass@primary:5432/db",
+    ReplicaDSNs: []string{
+        "postgres://user:pass@replica1:5432/db",
+        "postgres://user:pass@replica2:5432/db",
+    },
+    PoolConfig: &core.HighPerformancePoolConfig(),
+}
+
+db, _ := genus.OpenWithReplicas("postgres", config)
+
+// Reads automatically go to replicas (round-robin)
+users, _ := genus.Table[User](db).Find(ctx)  // → replica1
+users, _ := genus.Table[User](db).Find(ctx)  // → replica2
+users, _ := genus.Table[User](db).Find(ctx)  // → replica1
+
+// Writes always go to primary
+db.DB().Create(ctx, &user)  // → primary
+db.DB().Update(ctx, &user)  // → primary
+
+// Force read from primary (read-after-write consistency)
+db.DB().Create(ctx, &user)
+users, _ := genus.Table[User](db).
+    Where(UserFields.ID.Eq(user.ID)).
+    Find(core.WithPrimary(ctx))  // → primary (ensures consistency)
+```
+
+---
+
+## Query Caching (v4.0+)
+
+Reduce database load with query-level caching:
+
+```go
+import "github.com/GabrielOnRails/genus/cache"
+
+// Create in-memory cache
+memCache := cache.NewInMemoryCache(10000)  // 10k entries max
+
+// Use cache in queries
+users, _ := genus.Table[User](db).
+    WithCache(memCache, cache.DefaultCacheConfig()).
+    Where(UserFields.IsActive.Eq(true)).
+    Find(ctx)
+// First call: hits database, caches result
+// Subsequent calls: returns from cache
+
+// Invalidate cache for a table
+memCache.DeleteByPrefix(ctx, "genus:users:")
+
+// Check cache statistics
+stats := memCache.Stats()
+fmt.Printf("Hit rate: %.2f%%, Size: %d\n", stats.HitRate*100, stats.Size)
+```
+
+---
+
+## Polymorphic Relationships (v4.0+)
+
+Support for polymorphic associations (one model belonging to multiple types):
+
+```go
+type Comment struct {
+    core.Model
+    Body            string `db:"body"`
+    CommentableType string `db:"commentable_type"`  // "Post" or "Article"
+    CommentableID   int64  `db:"commentable_id"`
+}
+
+type Post struct {
+    core.Model
+    Title    string    `db:"title"`
+    Comments []Comment `db:"-" relation:"polymorphic,polymorphic=commentable"`
+}
+
+type Article struct {
+    core.Model
+    Content  string    `db:"content"`
+    Comments []Comment `db:"-" relation:"polymorphic,polymorphic=commentable"`
+}
+
+// Register models
+genus.RegisterModels(&Post{}, &Article{}, &Comment{})
+
+// Eager load polymorphic relationships
+posts, _ := genus.Table[Post](db).
+    Preload("Comments").
+    Find(ctx)
+// SQL: SELECT * FROM comments WHERE commentable_type = 'Post' AND commentable_id IN (...)
+```
+
+---
+
+## Type-Safe Subqueries (v4.0+)
+
+Build complex queries with subqueries while maintaining type safety:
+
+```go
+// IN subquery
+paidOrderSubquery := genus.Table[Order](db).
+    Where(OrderFields.Status.Eq("paid")).
+    Subquery().
+    Column("user_id").
+    ToSubquery()
+
+usersWithPaidOrders, _ := genus.Table[User](db).
+    WhereInSubquery("id", paidOrderSubquery).
+    Find(ctx)
+// SQL: SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE status = 'paid')
+
+// EXISTS subquery (correlated)
+postSubquery := genus.Table[Post](db).
+    CorrelatedSubquery("id").
+    Correlate("users.id = posts.user_id").
+    ToSubquery()
+
+usersWithPosts, _ := genus.Table[User](db).
+    WhereExists(postSubquery).
+    Find(ctx)
+// SQL: SELECT * FROM users WHERE EXISTS (SELECT id FROM posts WHERE users.id = posts.user_id)
+
+// Scalar subquery for comparisons
+avgPrice := genus.Table[Product](db).
+    ScalarSubquery("AVG(price)").
+    ToScalar()
+
+expensiveProducts, _ := genus.Table[Product](db).
+    Where(ProductFields.Price.Gt(avgPrice)).
+    Find(ctx)
+// SQL: SELECT * FROM products WHERE price > (SELECT AVG(price) FROM products)
+```
+
+---
+
+## Database Sharding (v4.0+)
+
+Horizontal partitioning across multiple database instances:
+
+```go
+import "github.com/GabrielOnRails/genus/sharding"
+
+// Configure shards
+config := genus.ShardConfig{
+    DSNs: []string{
+        "postgres://host1:5432/db",
+        "postgres://host2:5432/db",
+        "postgres://host3:5432/db",
+    },
+    Strategy: sharding.NewConsistentHashStrategy(100),  // Consistent hashing
+    // Or: Strategy: sharding.ModuloStrategy{}  // Simple modulo
+}
+
+db, _ := genus.OpenWithShards("postgres", config)
+
+// Query specific shard based on user ID
+ctx := sharding.WithShardKey(ctx, sharding.Int64ShardKey(userID))
+user, _ := genus.ShardedTable[User](db).First(ctx)
+
+// Query with string key (tenant-based sharding)
+ctx := sharding.WithShardKey(ctx, sharding.StringShardKey(tenantID))
+orders, _ := genus.ShardedTable[Order](db).Find(ctx)
+```
+
+---
+
+## OpenTelemetry Integration (v4.0+)
+
+Distributed tracing for observability:
+
+```go
+import "github.com/GabrielOnRails/genus/tracing"
+
+// Simple tracer for debugging
+simpleTracer := tracing.NewSimpleTracer(tracing.SimpleTracerConfig{
+    OnStart: func(ctx context.Context, name string) context.Context {
+        log.Printf("Query started: %s", name)
+        return ctx
+    },
+    OnEnd: func(name string, durationMs int64, err error) {
+        log.Printf("Query finished: %s [%dms]", name, durationMs)
+    },
+})
+
+db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
+    Tracer:   simpleTracer,
+    DBSystem: "postgresql",
+    DBName:   "mydb",
+})
+
+// With OpenTelemetry SDK
+import "go.opentelemetry.io/otel"
+
+otelTracer := otel.Tracer("genus")
+adapter := tracing.NewOTelAdapter(tracing.OTelAdapterConfig{
+    StartFunc: func(ctx context.Context, name string) (context.Context, interface{}) {
+        return otelTracer.Start(ctx, name)
+    },
+    // ... other callbacks
+})
+
+db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
+    Tracer: adapter,
+})
+```
+
 ---
 
 ## Documentation
@@ -697,13 +1058,26 @@ go run examples/migrations/main.go
 - [x] Advanced hooks (AfterCreate, BeforeUpdate, etc.)
 - [x] Soft deletes
 
-### v3.x 🚧 Planned
-- [ ] Query caching
-- [ ] Connection pooling configuration
-- [ ] Polymorphic relationships
-- [ ] Type-safe aggregations (Count, Sum, Avg, etc.)
-- [ ] Batch operations optimization
-- [ ] Read replicas support
+### v3.0 ✅ Implemented
+- [x] Auto-detect dialect from driver/DSN
+- [x] Connection pooling configuration
+- [x] Type-safe aggregations (Count, Sum, Avg, Max, Min, GroupBy, Having)
+- [x] Batch operations (BatchInsert, BatchUpdate, BatchDelete)
+- [x] Read replicas support with round-robin
+
+### v4.0 ✅ Implemented
+- [x] Query caching with LRU and TTL
+- [x] Polymorphic relationships
+- [x] Type-safe subqueries (IN, EXISTS, correlated)
+- [x] Database sharding support (modulo, consistent hash)
+- [x] OpenTelemetry integration
+
+### v5.x 🚧 Planned
+- [ ] GraphQL integration
+- [ ] Automatic query optimization
+- [ ] Schema diff and migration generation
+- [ ] Multi-tenancy support
+- [ ] Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
 
 ---
 

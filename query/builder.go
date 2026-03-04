@@ -430,6 +430,16 @@ func (b *Builder[T]) buildWhereClause(conditions []interface{}) (string, []inter
 			sql, condArgs := b.buildConditionGroup(c, &argIndex)
 			parts = append(parts, "("+sql+")")
 			args = append(args, condArgs...)
+
+		case SubqueryCondition:
+			sql, condArgs := b.buildSubqueryCondition(c, &argIndex)
+			parts = append(parts, sql)
+			args = append(args, condArgs...)
+
+		case ExistsCondition:
+			sql, condArgs := b.buildExistsCondition(c, &argIndex)
+			parts = append(parts, sql)
+			args = append(args, condArgs...)
 		}
 	}
 

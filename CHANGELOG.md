@@ -5,6 +5,567 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-03-04
+
+### Adicionado - Versão 4.0 (Enterprise Features)
+
+#### 1. Query Caching
+
+**Motivação:** Reduzir latência e carga no banco de dados cacheando resultados de queries frequentes.
+
+**Funcionalidades:**
+
+- Interface `Cache` para backends plugáveis
+- `InMemoryCache` com LRU eviction e TTL
+- `NoOpCache` para desabilitar cache sem modificar código
+- `CachedBuilder[T]` - wrapper do builder com cache integrado
+- Invalidação automática por tabela (prefixos)
+- Geração de chaves consistente baseada em query + args
+- Estatísticas de cache (hits, misses, evictions, hit rate)
+
+**Exemplo:**
+
+```go
+// Criar cache
+cache := cache.NewInMemoryCache(10000)  // 10k entries
+
+// Usar cache em queries
+users, _ := genus.Table[User](db).
+    WithCache(cache, cache.DefaultCacheConfig()).
+    Where(UserFields.Active.Eq(true)).
+    Find(ctx)
+
+// Invalidar cache de uma tabela
+cache.DeleteByPrefix(ctx, "genus:users:")
+
+// Verificar estatísticas
+stats := cache.Stats()
+fmt.Printf("Hit rate: %.2f%%\n", stats.HitRate * 100)
+```
+
+**Arquivos:**
+- `cache/cache.go` - Interface Cache e InMemoryCache
+- `query/cached_builder.go` - CachedBuilder com integração
+
+---
+
+#### 2. Polymorphic Relationships
+
+**Motivação:** Suportar relacionamentos onde um model pode pertencer a múltiplos tipos de models (ex: Comments que podem pertencer a Posts ou Articles).
+
+**Funcionalidades:**
+
+- Novo tipo de relacionamento `Polymorphic`
+- Tags `polymorphic`, `polymorphic_type`, `polymorphic_id`
+- Suporte em Preload para eager loading polimórfico
+- Defaults automáticos para nomes de colunas (`{base}_type`, `{base}_id`)
+- Validação de relacionamentos polimórficos no registro
+
+**Exemplo:**
+
+```go
+type Comment struct {
+    core.Model
+    Body              string `db:"body"`
+    CommentableType   string `db:"commentable_type"`  // "Post" ou "Article"
+    CommentableID     int64  `db:"commentable_id"`
+}
+
+type Post struct {
+    core.Model
+    Title    string    `db:"title"`
+    Comments []Comment `db:"-" relation:"polymorphic,polymorphic=commentable"`
+}
+
+type Article struct {
+    core.Model
+    Content  string    `db:"content"`
+    Comments []Comment `db:"-" relation:"polymorphic,polymorphic=commentable"`
+}
+
+// Query com eager loading
+posts, _ := genus.Table[Post](db).
+    Preload("Comments").  // Carrega comentários automaticamente
+    Find(ctx)
+```
+
+**Arquivos:**
+- `core/relationship.go` - RelationType `Polymorphic` e campos relacionados
+- `query/preload.go` - `preloadPolymorphic()` para eager loading
+
+---
+
+#### 3. Type-Safe Subqueries
+
+**Motivação:** Permitir subqueries complexas mantendo type-safety e compatibilidade com o query builder.
+
+**Funcionalidades:**
+
+- `SubqueryBuilder[T]` - Builder para subqueries
+- Condições `IN (subquery)` e `NOT IN (subquery)`
+- Condições `EXISTS (subquery)` e `NOT EXISTS (subquery)`
+- `ScalarSubquery` para comparações escalares (ex: `price > (SELECT AVG(price)...)`)
+- `CorrelatedSubquery` para subqueries correlacionadas
+- `RawSubquery()` para SQL raw quando necessário
+- Reescrita automática de placeholders para diferentes dialetos
+
+**Exemplo:**
+
+```go
+// Subquery IN
+subquery := genus.Table[Order](db).
+    Where(OrderFields.Status.Eq("paid")).
+    Subquery().
+    Column("user_id").
+    ToSubquery()
+
+users, _ := genus.Table[User](db).
+    WhereInSubquery("id", subquery).
+    Find(ctx)
+// SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE status = 'paid')
+
+// Subquery EXISTS
+postSubquery := genus.Table[Post](db).
+    CorrelatedSubquery("id").
+    Correlate("users.id = posts.user_id").
+    ToSubquery()
+
+usersWithPosts, _ := genus.Table[User](db).
+    WhereExists(postSubquery).
+    Find(ctx)
+// SELECT * FROM users WHERE EXISTS (SELECT id FROM posts WHERE users.id = posts.user_id)
+
+// Scalar subquery
+avgPrice := genus.Table[Product](db).
+    ScalarSubquery("AVG(price)").
+    ToScalar()
+
+expensiveProducts, _ := genus.Table[Product](db).
+    Where(ProductFields.Price.Gt(avgPrice)).
+    Find(ctx)
+```
+
+**Arquivos:**
+- `query/subquery.go` - SubqueryBuilder, ScalarSubquery, CorrelatedSubquery
+- `query/builder.go` - Integração no buildWhereClause
+
+---
+
+#### 4. Database Sharding
+
+**Motivação:** Suportar particionamento horizontal de dados em múltiplas instâncias de banco.
+
+**Funcionalidades:**
+
+- `ShardManager` - Gerencia conexões para múltiplos shards
+- Estratégias de sharding:
+  - `ModuloStrategy` - Distribuição por módulo (padrão)
+  - `ConsistentHashStrategy` - Consistent hashing para redistribuição mínima
+- `ShardExecutor` - Implementa Executor com routing automático
+- Context-based shard routing via `WithShardKey(ctx, key)`
+- Suporte a operações em todos os shards (`ExecOnAllShards`, `QueryAllShards`)
+- `MergeResults[T]()` para combinar resultados de múltiplos shards
+
+**Exemplo:**
+
+```go
+// Configurar sharding
+config := genus.ShardConfig{
+    DSNs: []string{
+        "postgres://host1:5432/db",
+        "postgres://host2:5432/db",
+        "postgres://host3:5432/db",
+    },
+    Strategy: sharding.NewConsistentHashStrategy(100),
+}
+
+db, _ := genus.OpenWithShards("postgres", config)
+
+// Query em shard específico (baseado na shard key)
+ctx := sharding.WithShardKey(ctx, sharding.Int64ShardKey(userID))
+user, _ := genus.ShardedTable[User](db).First(ctx)
+
+// Query em todos os shards
+results := make([]sharding.ShardedResult[User], db.NumShards())
+for i := 0; i < db.NumShards(); i++ {
+    ctx := sharding.WithShardKey(ctx, sharding.Int64ShardKey(i))
+    users, err := genus.ShardedTable[User](db).Find(ctx)
+    results[i] = sharding.ShardedResult[User]{Results: users, Error: err}
+}
+allUsers, _ := sharding.MergeResults(results)
+```
+
+**Arquivos:**
+- `sharding/sharding.go` - ShardManager, estratégias, tipos de chave
+- `core/shard_executor.go` - ShardExecutor e ShardedDB
+- `genus.go` - ShardConfig, OpenWithShards, ShardedTable
+
+---
+
+#### 5. OpenTelemetry Integration
+
+**Motivação:** Integrar distributed tracing para observabilidade de queries SQL em sistemas distribuídos.
+
+**Funcionalidades:**
+
+- `TracedExecutor` - Wrapper de executor com spans automáticos
+- Interface `Tracer` e `Span` abstratas (não requer importar OTel diretamente)
+- `OTelAdapter` - Adapter para integrar com go.opentelemetry.io/otel
+- `SimpleTracer` - Tracer simples com callbacks (para debugging)
+- `NoopTracer` - Tracer que não faz nada (default)
+- Semantic conventions para database spans (db.system, db.name, db.statement)
+- `MetricsCollector` para coletar métricas de queries
+
+**Exemplo:**
+
+```go
+// Com OpenTelemetry SDK
+import "go.opentelemetry.io/otel"
+
+otelTracer := otel.Tracer("genus")
+
+adapter := tracing.NewOTelAdapter(tracing.OTelAdapterConfig{
+    StartFunc: func(ctx context.Context, name string) (context.Context, interface{}) {
+        return otelTracer.Start(ctx, name)
+    },
+    SetAttributeFunc: func(span interface{}, k string, v interface{}) {
+        span.(trace.Span).SetAttributes(attribute.String(k, fmt.Sprintf("%v", v)))
+    },
+    RecordErrorFunc: func(span interface{}, err error) {
+        span.(trace.Span).RecordError(err)
+    },
+    SetStatusFunc: func(span interface{}, ok bool, msg string) {
+        if ok {
+            span.(trace.Span).SetStatus(codes.Ok, "")
+        } else {
+            span.(trace.Span).SetStatus(codes.Error, msg)
+        }
+    },
+    EndFunc: func(span interface{}) {
+        span.(trace.Span).End()
+    },
+})
+
+db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
+    Tracer:   adapter,
+    DBSystem: "postgresql",
+    DBName:   "mydb",
+})
+
+// Com SimpleTracer para debugging
+simpleTracer := tracing.NewSimpleTracer(tracing.SimpleTracerConfig{
+    OnStart: func(ctx context.Context, name string) context.Context {
+        log.Printf("Starting: %s", name)
+        return ctx
+    },
+    OnEnd: func(name string, durationMs int64, err error) {
+        log.Printf("Finished: %s [%dms]", name, durationMs)
+    },
+})
+
+db, _ := genus.OpenWithTracing("postgres", dsn, genus.TracingConfig{
+    Tracer: simpleTracer,
+})
+```
+
+**Arquivos:**
+- `tracing/otel.go` - Interfaces, TracedExecutor, MetricsCollector
+- `tracing/otel_adapter.go` - OTelAdapter, SimpleTracer
+- `genus.go` - TracingConfig, OpenWithTracing
+
+---
+
+### Mudanças Técnicas
+
+#### Arquitetura
+
+- Novo pacote `cache` para caching de queries
+- Novo pacote `sharding` para database sharding
+- Novo pacote `tracing` para observabilidade
+- Subquery conditions integradas ao query builder
+- Polymorphic relationships no sistema de preload
+
+#### Performance
+
+- Query caching reduz chamadas ao banco para queries repetidas
+- Sharding permite escalar horizontalmente
+- Tracing overhead mínimo com NoopTracer padrão
+
+#### Compatibilidade
+
+- Todas as features são opt-in
+- API existente permanece 100% compatível
+- Sem breaking changes
+
+---
+
+### Testes Adicionados
+
+- `cache/cache_test.go` - Testes para InMemoryCache, NoOpCache
+- `sharding/sharding_test.go` - Testes para estratégias de sharding
+- `tracing/otel_test.go` - Testes para tracers e adapters
+
+---
+
+
+
+### Adicionado - Versão 3.0 (Performance & Scaling Features)
+
+#### 1. Auto-detect Dialect
+
+**Motivação:** Simplificar a configuração removendo a necessidade de especificar o dialeto manualmente.
+
+**Funcionalidades:**
+
+- Função `DetectDialect(driver)` que detecta o dialeto baseado no nome do driver
+- Função `DetectDialectFromDSN(dsn)` que detecta o dialeto baseado na string de conexão
+- Função `DetectDriverFromDSN(dsn)` que detecta o driver baseado na string de conexão
+- Suporte a padrões de URL (postgres://, mysql://, file:)
+- Mapeamento automático:
+  - `postgres`, `pgx` → PostgreSQL dialect
+  - `mysql` → MySQL dialect
+  - `sqlite3`, `sqlite` → SQLite dialect
+
+**Exemplo:**
+
+```go
+// Antes (v2.0)
+db, _ := sql.Open("postgres", dsn)
+g := genus.New(db, postgres.New())
+
+// Agora (v3.0) - detecção automática
+g, _ := genus.Open("postgres", dsn) // Dialeto detectado automaticamente!
+
+// Ou mesmo sem especificar o driver
+driver := dialects.DetectDriverFromDSN("postgres://localhost/mydb")
+dialect := dialects.DetectDialectFromDSN("postgres://localhost/mydb")
+```
+
+**Arquivos:**
+- `dialects/detect.go` - Funções de detecção automática
+
+---
+
+#### 2. Connection Pooling Configuration
+
+**Motivação:** Expor configurações de pool de conexões de forma organizada e com defaults sensatos.
+
+**Funcionalidades:**
+
+- Struct `PoolConfig` com configurações de pool
+- `DefaultPoolConfig()` - Configuração padrão (25 open, 10 idle, 30min lifetime)
+- `HighPerformancePoolConfig()` - Para alta carga (100 open, 50 idle, 1h lifetime)
+- `MinimalPoolConfig()` - Para desenvolvimento (5 open, 2 idle, 15min lifetime)
+- Métodos fluentes: `WithMaxOpenConns()`, `WithMaxIdleConns()`, etc.
+- Função `OpenWithConfig()` que aplica configurações de pool automaticamente
+
+**Exemplo:**
+
+```go
+// Configuração padrão
+db, _ := genus.OpenWithConfig("postgres", dsn, core.DefaultPoolConfig())
+
+// Alta performance
+db, _ := genus.OpenWithConfig("mysql", dsn, core.HighPerformancePoolConfig())
+
+// Customizado com fluent API
+config := core.DefaultPoolConfig().
+    WithMaxOpenConns(50).
+    WithMaxIdleConns(25).
+    WithConnMaxLifetime(time.Hour)
+db, _ := genus.OpenWithConfig("postgres", dsn, config)
+```
+
+**Arquivos:**
+- `core/pool.go` - Estruturas e funções de pool configuration
+- `genus.go` - Função `OpenWithConfig()`
+
+---
+
+#### 3. Type-Safe Aggregations
+
+**Motivação:** Permitir operações de agregação (COUNT, SUM, AVG, MAX, MIN) com type-safety e suporte a GROUP BY/HAVING.
+
+**Funcionalidades:**
+
+- `AggregateBuilder[T]` - Builder dedicado para agregações
+- Funções de agregação: `CountAll()`, `Count()`, `Sum()`, `Avg()`, `Max()`, `Min()`
+- Agrupamento: `GroupBy(columns...)`
+- Filtragem de grupos: `Having(condition)`
+- Ordenação e paginação
+- `AggregateResult` com métodos tipados: `Int64()`, `Float64()`, `String()`, `Value()`
+
+**Exemplo:**
+
+```go
+// Contagem simples
+result, _ := genus.Table[Order](db).
+    Where(OrderFields.Status.Eq("paid")).
+    Aggregate().
+    CountAll().
+    One(ctx)
+fmt.Println(result.Int64("count")) // 42
+
+// Agregações múltiplas com GROUP BY
+results, _ := genus.Table[Order](db).
+    Aggregate().
+    Sum("total").
+    Avg("total").
+    CountAll().
+    GroupBy("user_id").
+    Having(query.Condition{Field: "COUNT(*)", Operator: query.OpGt, Value: 5}).
+    All(ctx)
+
+for _, r := range results {
+    fmt.Printf("User %s: sum=%f, avg=%f, count=%d\n",
+        r.String("user_id"),
+        r.Float64("sum_total"),
+        r.Float64("avg_total"),
+        r.Int64("count"))
+}
+```
+
+**Arquivos:**
+- `query/aggregation.go` - AggregateBuilder e AggregateResult
+
+---
+
+#### 4. Batch Operations
+
+**Motivação:** Permitir inserção, atualização e deleção em lote com performance otimizada (1 query ao invés de N).
+
+**Funcionalidades:**
+
+- `BatchInsert(ctx, models)` - Insert múltiplo com uma única query
+- `BatchInsertWithConfig(ctx, models, config)` - Insert com configuração personalizada
+- `BatchUpdate(ctx, models)` - Update múltiplo em transação
+- `BatchDelete(ctx, models)` - Delete múltiplo com `WHERE id IN (...)`
+- `BatchDeleteByIDs(ctx, tableName, ids)` - Delete direto por IDs
+- `BatchConfig` com `BatchSize` (default: 100) e `SkipHooks`
+- Suporte a soft delete em batch operations
+- Hooks opcionais (BeforeSave, AfterCreate, etc.)
+
+**Exemplo:**
+
+```go
+// Batch Insert
+users := []*User{
+    {Name: "Alice"},
+    {Name: "Bob"},
+    {Name: "Charlie"},
+}
+err := db.DB().BatchInsert(ctx, users) // 1 query!
+// INSERT INTO users (name) VALUES ('Alice'), ('Bob'), ('Charlie')
+
+// Batch com configuração
+config := core.BatchConfig{BatchSize: 50, SkipHooks: true}
+err = db.DB().BatchInsertWithConfig(ctx, users, config)
+
+// Batch Update (usa transação)
+for _, u := range users {
+    u.Name = u.Name + " Updated"
+}
+err = db.DB().BatchUpdate(ctx, users)
+
+// Batch Delete
+err = db.DB().BatchDelete(ctx, users)
+// DELETE FROM users WHERE id IN (1, 2, 3)
+
+// Delete por IDs
+err = db.DB().BatchDeleteByIDs(ctx, "users", []int64{1, 2, 3})
+```
+
+**Arquivos:**
+- `core/batch.go` - Operações em lote
+
+---
+
+#### 5. Read Replicas Support
+
+**Motivação:** Suportar arquiteturas com read replicas para escalar leituras.
+
+**Funcionalidades:**
+
+- `MultiExecutor` - Implementa `Executor` com suporte a replicas
+- Escrita sempre vai para o primary
+- Leitura usa round-robin entre replicas
+- `WithPrimary(ctx)` - Força leitura do primary (read-after-write consistency)
+- `OpenWithReplicas()` - Cria conexão com replicas configuradas
+- `NewWithExecutor()` - Cria DB com executor customizado
+- Métodos de diagnóstico: `Stats()`, `AllStats()`, `Ping()`
+
+**Exemplo:**
+
+```go
+// Configuração de replicas
+config := genus.ReplicaConfig{
+    PrimaryDSN: "postgres://user:pass@primary:5432/db",
+    ReplicaDSNs: []string{
+        "postgres://user:pass@replica1:5432/db",
+        "postgres://user:pass@replica2:5432/db",
+    },
+    PoolConfig: &core.HighPerformancePoolConfig(),
+}
+
+db, _ := genus.OpenWithReplicas("postgres", config)
+
+// Leituras vão automaticamente para replicas (round-robin)
+users, _ := genus.Table[User](db).Find(ctx) // → replica
+
+// Forçar leitura do primary (para consistência read-after-write)
+users, _ := genus.Table[User](db).Find(core.WithPrimary(ctx)) // → primary
+
+// Escritas sempre vão para o primary
+db.DB().Create(ctx, &user) // → primary
+db.DB().Update(ctx, &user) // → primary
+db.DB().Delete(ctx, &user) // → primary
+```
+
+**Arquivos:**
+- `core/context.go` - `WithPrimary()` e `UsePrimary()`
+- `core/multi_executor.go` - `MultiExecutor` com round-robin
+- `core/db.go` - `NewWithExecutor()` e `NewWithExecutorAndLogger()`
+- `genus.go` - `ReplicaConfig` e `OpenWithReplicas()`
+
+---
+
+### Mudanças Técnicas
+
+#### Arquitetura
+
+- Novo sistema de detecção automática de dialetos
+- Pool configuration como estrutura imutável com métodos fluentes
+- AggregateBuilder separado do Builder principal (single responsibility)
+- MultiExecutor implementa Executor interface (strategy pattern)
+- Context-based routing para primary/replica selection
+
+#### Performance
+
+- Batch operations reduzem N queries para 1 (ou N/BatchSize)
+- Read replicas distribuem carga de leitura
+- Pool configuration permite tuning fino de conexões
+- Round-robin atômico para distribuição de carga entre replicas
+
+#### Compatibilidade
+
+- Todas as features são opt-in
+- API existente permanece 100% compatível
+- Funções `Open()` e `New()` continuam funcionando normalmente
+- Novos métodos adicionados sem breaking changes
+
+---
+
+### Testes Adicionados
+
+- `dialects/detect_test.go` - Testes para detecção de dialeto
+- `core/pool_test.go` - Testes para pool configuration
+- `core/context_test.go` - Testes para WithPrimary
+- `core/multi_executor_test.go` - Testes para MultiExecutor
+- `core/batch_test.go` - Testes para batch config
+- `query/aggregation_test.go` - Testes para AggregateResult
+
+---
+
 ## [2.0.0] - 2026-01-06
 
 ### Adicionado - Versão 2.0 (Relational Features)
@@ -559,19 +1120,21 @@ var UserFields = struct {
 
 ## Próximas Versões
 
-### [3.0.0] - Planejado
+### [5.0.0] - Planejado
 
-#### Advanced Features
+#### Future Features
 
-- Query caching
-- Connection pooling configuration
-- Relacionamentos polimórficos
-- Agregações type-safe (Count, Sum, Avg, Max, Min, GroupBy)
-- Subqueries type-safe
-- Raw SQL builder com type-safety
+- GraphQL integration
+- Automatic query optimization
+- Schema diff and migration generation
+- Multi-tenancy support
+- Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
+- Read-your-writes consistency helpers
 
 ---
 
+[4.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v4.0.0
+[3.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v3.0.0
 [2.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v2.0.0
 [1.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v1.0.0
 [0.1.0]: https://github.com/GabrielOnRails/genus/releases/tag/v0.1.0

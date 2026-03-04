@@ -77,6 +77,10 @@ func executePreload[T any](
 			if err := preloadManyToMany(ctx, executor, dialect, logger, results, relMeta, spec.Nested); err != nil {
 				return err
 			}
+		case core.Polymorphic:
+			if err := preloadPolymorphic(ctx, executor, dialect, logger, results, relMeta, spec.Nested); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unsupported relationship type: %s", relMeta.Type)
 		}
@@ -511,4 +515,176 @@ func toPascalCase(s string) string {
 // buildFieldMapForStruct é um wrapper para buildFieldMap do scanner.
 func buildFieldMapForStruct(typ reflect.Type) map[string]fieldPath {
 	return buildFieldMap(typ)
+}
+
+// preloadPolymorphic carrega relacionamentos polimórficos.
+// Exemplo: Comment pertence a Post ou User via commentable_type e commentable_id
+//
+// Table: comments
+//
+//	id | body | commentable_type | commentable_id
+//	1  | Nice | Post             | 5
+//	2  | Great| User             | 3
+func preloadPolymorphic[T any](
+	ctx context.Context,
+	executor core.Executor,
+	dialect core.Dialect,
+	logger core.Logger,
+	children []T,
+	meta *core.RelationshipMeta,
+	nested []*PreloadSpec,
+) error {
+	if len(children) == 0 {
+		return nil
+	}
+
+	// 1. Coleta todos os pares (type, id) dos children
+	type polyKey struct {
+		typeName string
+		id       int64
+	}
+
+	polyKeys := make([]polyKey, 0, len(children))
+	keySet := make(map[polyKey]bool)
+
+	typeFieldName := toPascalCase(meta.PolymorphicType)
+	idFieldName := toPascalCase(meta.PolymorphicID)
+
+	for _, child := range children {
+		v := reflect.ValueOf(child)
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+
+		typeField := v.FieldByName(typeFieldName)
+		idField := v.FieldByName(idFieldName)
+
+		if !typeField.IsValid() || !idField.IsValid() {
+			continue
+		}
+
+		typeName := typeField.String()
+		id := idField.Int()
+
+		if typeName != "" && id > 0 {
+			key := polyKey{typeName: typeName, id: id}
+			if !keySet[key] {
+				polyKeys = append(polyKeys, key)
+				keySet[key] = true
+			}
+		}
+	}
+
+	if len(polyKeys) == 0 {
+		return nil
+	}
+
+	// 2. Agrupa por type para fazer queries batch
+	typeGroups := make(map[string][]int64)
+	for _, key := range polyKeys {
+		typeGroups[key.typeName] = append(typeGroups[key.typeName], key.id)
+	}
+
+	// 3. Para cada type, faz uma query e armazena os resultados
+	parentsMap := make(map[polyKey]reflect.Value)
+
+	for typeName, ids := range typeGroups {
+		// Converte type name para table name (Post -> post)
+		tableName := toSnakeCasePlural(typeName)
+
+		// Constrói query
+		placeholders := make([]string, len(ids))
+		args := make([]interface{}, len(ids))
+		for i, id := range ids {
+			placeholders[i] = dialect.Placeholder(i + 1)
+			args[i] = id
+		}
+
+		query := fmt.Sprintf(
+			"SELECT * FROM %s WHERE id IN (%s)",
+			dialect.QuoteIdentifier(tableName),
+			strings.Join(placeholders, ", "),
+		)
+
+		rows, err := executor.QueryContext(ctx, query, args...)
+		if err != nil {
+			logger.LogError(query, args, err)
+			return fmt.Errorf("failed to preload polymorphic %s for type %s: %w", meta.FieldName, typeName, err)
+		}
+
+		// Scan os resultados
+		for rows.Next() {
+			// Cria instância do tipo relacionado
+			parentType := meta.FieldType
+			if parentType.Kind() == reflect.Ptr {
+				parentType = parentType.Elem()
+			}
+
+			parent := reflect.New(parentType).Interface()
+
+			if err := scanStruct(rows, parent); err != nil {
+				rows.Close()
+				return fmt.Errorf("failed to scan polymorphic parent: %w", err)
+			}
+
+			parentValue := reflect.ValueOf(parent).Elem()
+			idField := parentValue.FieldByName("ID")
+			if idField.IsValid() {
+				key := polyKey{typeName: typeName, id: idField.Int()}
+				parentsMap[key] = parentValue
+			}
+		}
+		rows.Close()
+	}
+
+	// 4. Atribui parents aos children
+	for i := range children {
+		v := reflect.ValueOf(&children[i]).Elem()
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+
+		typeField := v.FieldByName(typeFieldName)
+		idField := v.FieldByName(idFieldName)
+
+		if !typeField.IsValid() || !idField.IsValid() {
+			continue
+		}
+
+		typeName := typeField.String()
+		id := idField.Int()
+		key := polyKey{typeName: typeName, id: id}
+
+		if parent, ok := parentsMap[key]; ok {
+			relField := v.FieldByName(meta.FieldName)
+			if relField.IsValid() && relField.CanSet() {
+				// Se o field é pointer
+				if relField.Type().Kind() == reflect.Ptr {
+					ptr := reflect.New(parent.Type())
+					ptr.Elem().Set(parent)
+					relField.Set(ptr)
+				} else if relField.Type().Kind() == reflect.Interface {
+					// Para interface{}, apenas define o valor
+					relField.Set(parent.Addr())
+				} else {
+					relField.Set(parent)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// toSnakeCasePlural converte PascalCase para snake_case (simplificado).
+// Para nomes de tabelas polimórficas.
+func toSnakeCasePlural(s string) string {
+	var result strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			result.WriteRune('_')
+		}
+		result.WriteRune(r)
+	}
+	return strings.ToLower(result.String())
 }

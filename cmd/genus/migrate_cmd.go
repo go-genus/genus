@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/dialects/postgres"
+	"github.com/GabrielOnRails/genus/dialects"
 	"github.com/GabrielOnRails/genus/migrate"
 )
 
@@ -209,6 +209,7 @@ func runMigrateCreate() error {
 }
 
 // connectDB conecta ao banco de dados usando variáveis de ambiente.
+// O driver e dialeto são detectados automaticamente baseado no DSN.
 func connectDB() (*sql.DB, core.Dialect, error) {
 	// Obter DSN de variável de ambiente
 	dsn := os.Getenv("DATABASE_URL")
@@ -217,9 +218,11 @@ func connectDB() (*sql.DB, core.Dialect, error) {
 		fmt.Printf("DATABASE_URL not set, using default: %s\n", dsn)
 	}
 
-	// Por enquanto, apenas PostgreSQL
-	// TODO: Detectar dialect automaticamente do DSN
-	db, err := sql.Open("postgres", dsn)
+	// Detectar driver e dialeto automaticamente do DSN
+	driver := dialects.DetectDriverFromDSN(dsn)
+	dialect := dialects.DetectDialectFromDSN(dsn)
+
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -228,7 +231,6 @@ func connectDB() (*sql.DB, core.Dialect, error) {
 		return nil, nil, err
 	}
 
-	dialect := postgres.New()
 	return db, dialect, nil
 }
 

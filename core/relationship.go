@@ -10,9 +10,10 @@ import (
 type RelationType string
 
 const (
-	HasMany    RelationType = "has_many"
-	BelongsTo  RelationType = "belongs_to"
-	ManyToMany RelationType = "many_to_many"
+	HasMany     RelationType = "has_many"
+	BelongsTo   RelationType = "belongs_to"
+	ManyToMany  RelationType = "many_to_many"
+	Polymorphic RelationType = "polymorphic"
 )
 
 // RelationshipMeta armazena metadata sobre um relacionamento.
@@ -24,7 +25,9 @@ type RelationshipMeta struct {
 	References            string       // Coluna referenciada (ex: "id")
 	JoinTable             string       // Tabela de junção (para ManyToMany)
 	AssociationForeignKey string       // FK da associação (para ManyToMany)
-	Polymorphic           string       // Para relacionamentos polimórficos (futuro)
+	Polymorphic           string       // Nome base para polymorphic (ex: "commentable")
+	PolymorphicType       string       // Nome da coluna type (ex: "commentable_type")
+	PolymorphicID         string       // Nome da coluna ID (ex: "commentable_id")
 }
 
 // ModelRelationships armazena todos os relacionamentos de um model type.
@@ -139,6 +142,10 @@ func parseRelationTag(field reflect.StructField, tag string) (*RelationshipMeta,
 			meta.AssociationForeignKey = value
 		case "polymorphic":
 			meta.Polymorphic = value
+		case "polymorphic_type":
+			meta.PolymorphicType = value
+		case "polymorphic_id":
+			meta.PolymorphicID = value
 		}
 	}
 
@@ -147,10 +154,20 @@ func parseRelationTag(field reflect.StructField, tag string) (*RelationshipMeta,
 		meta.References = "id"
 	}
 
+	// Defaults para polymorphic
+	if meta.Polymorphic != "" {
+		if meta.PolymorphicType == "" {
+			meta.PolymorphicType = meta.Polymorphic + "_type"
+		}
+		if meta.PolymorphicID == "" {
+			meta.PolymorphicID = meta.Polymorphic + "_id"
+		}
+	}
+
 	// Validações básicas
 	switch meta.Type {
 	case HasMany, BelongsTo:
-		if meta.ForeignKey == "" {
+		if meta.ForeignKey == "" && meta.Polymorphic == "" {
 			return nil, fmt.Errorf("foreign_key is required for %s relationship", meta.Type)
 		}
 	case ManyToMany:
@@ -159,6 +176,10 @@ func parseRelationTag(field reflect.StructField, tag string) (*RelationshipMeta,
 		}
 		if meta.ForeignKey == "" || meta.AssociationForeignKey == "" {
 			return nil, fmt.Errorf("foreign_key and association_foreign_key are required for many_to_many")
+		}
+	case Polymorphic:
+		if meta.Polymorphic == "" {
+			return nil, fmt.Errorf("polymorphic field name is required for polymorphic relationship")
 		}
 	default:
 		return nil, fmt.Errorf("unknown relation type: %s", meta.Type)

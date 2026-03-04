@@ -34,6 +34,30 @@ func NewWithLogger(sqlDB *sql.DB, dialect Dialect, logger Logger) *DB {
 	}
 }
 
+// NewWithExecutor cria uma nova instância do Genus DB com um executor customizado.
+// Útil para configurações avançadas como read replicas (MultiExecutor).
+//
+// Exemplo:
+//
+//	executor := core.NewMultiExecutor(primary, replica1, replica2)
+//	db := core.NewWithExecutor(executor, dialect)
+func NewWithExecutor(executor Executor, dialect Dialect) *DB {
+	return &DB{
+		executor: executor,
+		dialect:  dialect,
+		logger:   NewDefaultLogger(false),
+	}
+}
+
+// NewWithExecutorAndLogger cria uma nova instância com executor e logger customizados.
+func NewWithExecutorAndLogger(executor Executor, dialect Dialect, logger Logger) *DB {
+	return &DB{
+		executor: executor,
+		dialect:  dialect,
+		logger:   logger,
+	}
+}
+
 // WithTx executa uma função dentro de uma transação.
 func (db *DB) WithTx(ctx context.Context, fn func(*DB) error) error {
 	sqlDB, ok := db.executor.(*sql.DB)

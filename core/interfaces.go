@@ -9,6 +9,9 @@ import (
 // ErrValidation é retornado quando a validação de um modelo falha.
 var ErrValidation = errors.New("validation failed")
 
+// ErrNotFound é retornado quando um registro não é encontrado.
+var ErrNotFound = errors.New("record not found")
+
 // Dialect define a interface para diferentes dialetos de banco de dados.
 // Cada dialeto (PostgreSQL, MySQL, SQLite) implementa esta interface.
 type Dialect interface {
