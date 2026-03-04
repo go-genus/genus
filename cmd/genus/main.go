@@ -23,6 +23,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+	case "generate-scanners":
+		if err := runGenerateScanners(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	case "migrate":
 		if err := runMigrate(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -104,6 +109,28 @@ func runGenerate() error {
 	return nil
 }
 
+func runGenerateScanners() error {
+	args := os.Args[2:]
+
+	if len(args) == 0 {
+		args = []string{"."}
+	}
+
+	for _, path := range args {
+		if path == "-h" || path == "--help" {
+			printGenerateScannersUsage()
+			return nil
+		}
+
+		fmt.Printf("Generating scanners for: %s\n", path)
+		if err := codegen.GenerateScannersForDir(path); err != nil {
+			return fmt.Errorf("failed to generate scanners: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func printUsage() {
 	fmt.Println(`Genus - Type-safe ORM for Go
 
@@ -111,12 +138,13 @@ Usage:
   genus <command> [arguments]
 
 Commands:
-  generate    Generate type-safe field definitions from Go structs
-  migrate     Manage database migrations (up, down, status, create)
-  repl        Interactive query builder REPL
-  playground  Start web-based query playground
-  version     Print version information
-  help        Show this help message
+  generate          Generate type-safe field definitions from Go structs
+  generate-scanners Generate optimized, reflection-free scanners
+  migrate           Manage database migrations (up, down, status, create)
+  repl              Interactive query builder REPL
+  playground        Start web-based query playground
+  version           Print version information
+  help              Show this help message
 
 Run 'genus <command> --help' for more information on a command.`)
 }
@@ -142,4 +170,27 @@ The generator will:
 1. Scan Go files for structs with 'db' tags
 2. Generate type-safe field definitions (e.g., UserFields, ProductFields)
 3. Save generated code to *_fields.gen.go files`)
+}
+
+func printGenerateScannersUsage() {
+	fmt.Println(`Generate optimized, reflection-free scanners from Go structs
+
+Usage:
+  genus generate-scanners [paths...]
+
+Examples:
+  genus generate-scanners                # Generate from current directory
+  genus generate-scanners ./models       # Generate from models directory
+
+The generator will:
+1. Scan Go files for structs with 'db' tags or embedded core.Model
+2. Generate optimized ScanXxx() functions (10x faster than reflection)
+3. Save generated code to scanners.gen.go
+
+Generated functions:
+  - ScanUser(rows) (User, error)           // Scan single row
+  - ScanUsers(rows) ([]User, error)        // Scan all rows
+  - ScanUsersWithCap(rows, cap)            // Scan with pre-allocated capacity
+  - UserColumns() []string                 // Column names in order
+  - UserColumnsString() string             // "id, name, email, ..."`)
 }
