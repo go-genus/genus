@@ -5,6 +5,296 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.0] - 2026-03-04
+
+### Adicionado - Versão 7.0 (Cloud Native & Developer Experience)
+
+#### 1. Kubernetes Health Checks
+
+**Motivação:** Suporte nativo para probes do Kubernetes (/live, /ready, /startup).
+
+**Funcionalidades:**
+
+- `HealthChecker` - Gerenciador de health checks
+- `LivenessHandler()` - Handler para /live (reiniciar container)
+- `ReadinessHandler()` - Handler para /ready (aceitar tráfego)
+- `StartupHandler()` - Handler para /startup (inicialização)
+- `GracefulShutdown()` - Shutdown graceful com drain
+- Custom health checks para Redis, Kafka, serviços externos
+
+**Exemplo:**
+
+```go
+hc := cloud.NewHealthChecker(cloud.HealthCheckerConfig{
+    DB:      db,
+    Version: "1.0.0",
+})
+
+// Adiciona checks customizados
+hc.AddCheck(cloud.RedisHealthCheck(redisClient.Ping))
+hc.AddCheck(cloud.ExternalServiceHealthCheck("api", "https://api.example.com/health", 5*time.Second))
+
+// Registra handlers
+mux := http.NewServeMux()
+hc.RegisterHandlers(mux) // Registra /live, /ready, /startup, /health
+```
+
+**Arquivos:**
+- `cloud/health.go` - Health checks completos
+
+---
+
+#### 2. Distributed Tracing (Jaeger/Zipkin)
+
+**Motivação:** Integração completa com Jaeger e Zipkin para distributed tracing.
+
+**Funcionalidades:**
+
+- `NewJaegerProvider()` / `NewZipkinProvider()` - Providers de tracing
+- `TracedDB` - DB wrapper com tracing automático
+- `TracedTx` - Transaction com tracing
+- `TracingMiddleware` - Middleware HTTP para propagação
+- `QueryTracer` - Rastreamento de queries com slow query detection
+- Suporte a W3C Trace Context e Baggage
+
+**Exemplo:**
+
+```go
+// Jaeger
+tp, _ := cloud.NewJaegerProvider(cloud.TracingConfig{
+    ServiceName:    "my-service",
+    JaegerEndpoint: "http://localhost:14268/api/traces",
+    SampleRate:     0.1, // 10%
+})
+defer tp.Shutdown(ctx)
+
+// DB com tracing
+tracedDB := cloud.NewTracedDB(db, tp.Tracer(), "mydb", "postgres")
+rows, _ := tracedDB.QueryContext(ctx, "SELECT * FROM users")
+
+// Middleware HTTP
+router.Use(cloud.TracingMiddleware(tp.Tracer()))
+```
+
+**Arquivos:**
+- `cloud/tracing.go` - Distributed tracing
+
+---
+
+#### 3. Cloud Database Adapters
+
+**Motivação:** Conectores otimizados para Aurora, Cloud SQL, CockroachDB, PlanetScale, Neon.
+
+**Funcionalidades:**
+
+- `AuroraAdapter` - Amazon Aurora (PostgreSQL/MySQL) com writer/reader endpoints
+- `CloudSQLAdapter` - Google Cloud SQL com suporte a Unix socket
+- `CockroachDBAdapter` - CockroachDB com retry automático para serialization errors
+- `PlanetScaleAdapter` - PlanetScale (MySQL serverless)
+- `NeonAdapter` - Neon (PostgreSQL serverless)
+- TLS configuration helpers
+
+**Exemplo:**
+
+```go
+// Aurora com read replicas
+aurora, _ := cloud.NewAuroraPostgresAdapter(cloud.AuroraConfig{
+    ClusterEndpoint: "cluster.xxx.us-east-1.rds.amazonaws.com",
+    ReaderEndpoint:  "cluster-ro.xxx.us-east-1.rds.amazonaws.com",
+    Database:        "mydb",
+    Username:        "admin",
+    Password:        "secret",
+})
+defer aurora.Close()
+
+aurora.Writer() // Para writes
+aurora.Reader() // Para reads (replica)
+
+// CockroachDB com retry
+crdb, _ := cloud.NewCockroachDBAdapter(cloud.CockroachDBConfig{
+    Hosts:    []string{"localhost"},
+    Database: "mydb",
+})
+crdb.RunTransaction(ctx, func(tx *sql.Tx) error {
+    // Retry automático em caso de serialization error
+    return nil
+})
+```
+
+**Arquivos:**
+- `cloud/adapters.go` - Cloud adapters
+
+---
+
+#### 4. Serverless Connection Pooling
+
+**Motivação:** Pooling otimizado para ambientes serverless (Lambda, Cloud Functions).
+
+**Funcionalidades:**
+
+- `ServerlessPool` - Pool com warm connections e cold start handling
+- `NewPgBouncerPool()` - Pool configurado para PgBouncer
+- `NewPgCatPool()` - Pool configurado para pgcat
+- `NewProxySQLPool()` - Pool configurado para ProxySQL (MySQL)
+- Retry com backoff exponencial
+- Health checks automáticos
+- Scale down automático
+
+**Exemplo:**
+
+```go
+pool := cloud.NewServerlessPool(db, cloud.ServerlessPoolConfig{
+    PoolMode:        cloud.PoolModeTransaction,
+    MaxOpenConns:    10,
+    MaxIdleConns:    2,
+    WarmConnections: 1,
+    ColdStartTimeout: 10 * time.Second,
+})
+pool.Start(ctx)
+defer pool.Stop()
+
+// Estatísticas
+stats := pool.Stats()
+fmt.Printf("Cold starts: %d, Active: %d\n", stats.ColdStarts, stats.ActiveConnections)
+```
+
+**Arquivos:**
+- `cloud/pool.go` - Serverless pooling
+
+---
+
+#### 5. Interactive Query Builder CLI (REPL)
+
+**Motivação:** REPL interativo para testar queries com feedback em tempo real.
+
+**Funcionalidades:**
+
+- `genus repl` - Inicia o REPL
+- Comandos: `\dt`, `\d TABLE`, `\e QUERY`, `\timing`, `\format`
+- Suporte a transações: `\begin`, `\commit`, `\rollback`
+- Output formats: table, JSON, CSV
+- Query history
+- Multi-line queries
+
+**Exemplo:**
+
+```bash
+$ genus repl --dsn "postgres://localhost/mydb"
+
+genus> SELECT * FROM users LIMIT 5;
++----+--------+-------------------+
+| id | name   | email             |
++----+--------+-------------------+
+| 1  | Alice  | alice@example.com |
+| 2  | Bob    | bob@example.com   |
++----+--------+-------------------+
+(2 rows)
+Time: 2.3ms
+
+genus> \dt
+Tables:
+  users                          (5 columns)
+  orders                         (8 columns)
+
+genus> \e SELECT * FROM users WHERE id = 1;
+Query Plan:
+Index Scan using users_pkey on users  (cost=0.15..8.17 rows=1)
+```
+
+**Arquivos:**
+- `cmd/genus/repl_cmd.go` - REPL implementation
+
+---
+
+#### 6. VS Code Extension
+
+**Motivação:** Integração com VS Code para melhor developer experience.
+
+**Funcionalidades:**
+
+- Autocomplete para queries Genus
+- Snippets para models, fields, queries, migrations
+- Preview de SQL gerado em hover
+- Schema viewer sidebar
+- Comandos: Generate Fields, Run Migration, Open Playground
+
+**Snippets incluídos:**
+- `genusmodel` - Criar model
+- `genusfields` - Criar fields
+- `genusfind` / `genusfirst` - Queries
+- `genusinsert` / `genusupdate` / `genusdelete` - CRUD
+- `genustx` - Transaction
+- `genusmigration` - Migration
+- `genuscommand` / `genusquery` - CQRS handlers
+- E mais 20+ snippets
+
+**Arquivos:**
+- `vscode/package.json` - Extension manifest
+- `vscode/snippets/genus.json` - Snippets
+- `vscode/src/extension.ts` - Extension code
+
+---
+
+#### 7. Database Migrations Visualizer
+
+**Motivação:** Visualizar dependências entre migrações como DAG.
+
+**Funcionalidades:**
+
+- `MigrationVisualizer` - Visualizador de migrações
+- `BuildDAG()` - Constrói grafo de dependências
+- Output formats: JSON, HTML (D3.js), DOT (Graphviz), Mermaid, ASCII
+- `ValidateDAG()` - Detecta ciclos
+- `GetExecutionOrder()` - Ordem topológica de execução
+
+**Exemplo:**
+
+```go
+visualizer := migrate.NewMigrationVisualizer("./migrations", db)
+dag, _ := visualizer.BuildDAG(ctx)
+
+// HTML interativo com D3.js
+visualizer.Visualize(ctx, migrate.OutputFormatHTML, file)
+
+// Mermaid para Markdown
+visualizer.Visualize(ctx, migrate.OutputFormatMermaid, os.Stdout)
+
+// ASCII para terminal
+visualizer.Visualize(ctx, migrate.OutputFormatASCII, os.Stdout)
+```
+
+**Arquivos:**
+- `migrate/visualizer.go` - Migration visualizer
+
+---
+
+#### 8. Query Playground (Web UI)
+
+**Motivação:** Interface web para testar queries com export de resultados.
+
+**Funcionalidades:**
+
+- `genus playground` - Inicia servidor web
+- Execute queries com syntax highlighting
+- View schema e estrutura de tabelas
+- Export para CSV e JSON
+- Query history
+- EXPLAIN plans
+- Read-only mode
+
+**Exemplo:**
+
+```bash
+$ genus playground --port 8765 --dsn "postgres://localhost/mydb"
+🎮 Genus Playground running at http://localhost:8765
+```
+
+**Arquivos:**
+- `playground/server.go` - Playground server
+- `cmd/genus/playground_cmd.go` - CLI command
+
+---
+
 ## [6.0.0] - 2026-03-04
 
 ### Adicionado - Versão 6.0 (Query Intelligence & Advanced Patterns)

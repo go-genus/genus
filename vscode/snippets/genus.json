@@ -1,0 +1,299 @@
+{
+  "Genus Model": {
+    "prefix": "genusmodel",
+    "body": [
+      "type ${1:ModelName} struct {",
+      "\tcore.Model",
+      "\t${2:Name} ${3:string} `db:\"${4:name}\"`",
+      "\t$0",
+      "}",
+      "",
+      "func (${5:m} *${1:ModelName}) TableName() string {",
+      "\treturn \"${6:table_name}\"",
+      "}"
+    ],
+    "description": "Create a Genus ORM model"
+  },
+  "Genus Fields": {
+    "prefix": "genusfields",
+    "body": [
+      "var ${1:Model}Fields = struct {",
+      "\t${2:Name} query.StringField",
+      "\t$0",
+      "}{",
+      "\t${2:Name}: query.NewStringField(\"${3:name}\"),",
+      "}"
+    ],
+    "description": "Create type-safe fields for a model"
+  },
+  "Genus Query Find": {
+    "prefix": "genusfind",
+    "body": [
+      "${1:results}, err := genus.Table[${2:Model}](db).",
+      "\tWhere(${2:Model}Fields.${3:Field}.${4:Eq}(${5:value})).",
+      "\tFind(ctx)",
+      "if err != nil {",
+      "\treturn ${6:nil, }err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus query with Find"
+  },
+  "Genus Query First": {
+    "prefix": "genusfirst",
+    "body": [
+      "${1:result}, err := genus.Table[${2:Model}](db).",
+      "\tWhere(${2:Model}Fields.${3:Field}.${4:Eq}(${5:value})).",
+      "\tFirst(ctx)",
+      "if err != nil {",
+      "\treturn ${6:nil, }err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus query with First"
+  },
+  "Genus Insert": {
+    "prefix": "genusinsert",
+    "body": [
+      "${1:model} := &${2:Model}{",
+      "\t${3:Field}: ${4:value},",
+      "}",
+      "if err := db.DB().Create(ctx, ${1:model}); err != nil {",
+      "\treturn err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus insert"
+  },
+  "Genus Update": {
+    "prefix": "genusupdate",
+    "body": [
+      "${1:model}.${2:Field} = ${3:newValue}",
+      "if err := db.DB().Update(ctx, ${1:model}); err != nil {",
+      "\treturn err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus update"
+  },
+  "Genus Delete": {
+    "prefix": "genusdelete",
+    "body": [
+      "if err := db.DB().Delete(ctx, ${1:model}); err != nil {",
+      "\treturn err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus delete"
+  },
+  "Genus Transaction": {
+    "prefix": "genustx",
+    "body": [
+      "err := db.DB().Transaction(ctx, func(tx *core.DB) error {",
+      "\t$0",
+      "\treturn nil",
+      "})",
+      "if err != nil {",
+      "\treturn err",
+      "}"
+    ],
+    "description": "Genus transaction"
+  },
+  "Genus Migration": {
+    "prefix": "genusmigration",
+    "body": [
+      "package migrations",
+      "",
+      "import (",
+      "\t\"context\"",
+      "",
+      "\t\"github.com/GabrielOnRails/genus/migrate\"",
+      ")",
+      "",
+      "func init() {",
+      "\tmigrate.Register(&migrate.Migration{",
+      "\t\tVersion:     ${1:1},",
+      "\t\tDescription: \"${2:description}\",",
+      "\t\tUp: func(ctx context.Context, db migrate.Executor) error {",
+      "\t\t\t_, err := db.ExecContext(ctx, `",
+      "\t\t\t\t${3:CREATE TABLE ${4:table_name} (",
+      "\t\t\t\t\tid SERIAL PRIMARY KEY,",
+      "\t\t\t\t\tcreated_at TIMESTAMP DEFAULT NOW(),",
+      "\t\t\t\t\tupdated_at TIMESTAMP DEFAULT NOW()",
+      "\t\t\t\t)}",
+      "\t\t\t`)",
+      "\t\t\treturn err",
+      "\t\t},",
+      "\t\tDown: func(ctx context.Context, db migrate.Executor) error {",
+      "\t\t\t_, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS ${4:table_name}`)",
+      "\t\t\treturn err",
+      "\t\t},",
+      "\t})",
+      "}"
+    ],
+    "description": "Create a Genus migration"
+  },
+  "Genus Preload": {
+    "prefix": "genuspreload",
+    "body": [
+      "${1:results}, err := genus.Table[${2:Model}](db).",
+      "\tPreload(\"${3:RelationName}\").",
+      "\tFind(ctx)",
+      "if err != nil {",
+      "\treturn ${4:nil, }err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus query with Preload"
+  },
+  "Genus Join": {
+    "prefix": "genusjoin",
+    "body": [
+      "${1:results}, err := genus.Table[${2:Model}](db).",
+      "\tJoin(\"${3:related_table}\", \"${3:related_table}.${4:foreign_key} = ${5:table}.id\").",
+      "\tFind(ctx)",
+      "if err != nil {",
+      "\treturn ${6:nil, }err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus query with Join"
+  },
+  "Genus Aggregate": {
+    "prefix": "genusaggregate",
+    "body": [
+      "${1:result}, err := genus.Table[${2:Model}](db).",
+      "\tAggregate().",
+      "\t${3:CountAll}().",
+      "\tOne(ctx)",
+      "if err != nil {",
+      "\treturn ${4:0, }err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus aggregation query"
+  },
+  "Genus Batch Insert": {
+    "prefix": "genusbatch",
+    "body": [
+      "${1:models} := []*${2:Model}{",
+      "\t{${3:Field}: ${4:value1}},",
+      "\t{${3:Field}: ${5:value2}},",
+      "}",
+      "if err := db.DB().BatchInsert(ctx, ${1:models}); err != nil {",
+      "\treturn err",
+      "}",
+      "$0"
+    ],
+    "description": "Genus batch insert"
+  },
+  "Genus String Field": {
+    "prefix": "genusstringfield",
+    "body": [
+      "${1:FieldName} query.StringField `json:\"${2:field_name}\"`"
+    ],
+    "description": "Genus string field"
+  },
+  "Genus Int Field": {
+    "prefix": "genusintfield",
+    "body": [
+      "${1:FieldName} query.IntField `json:\"${2:field_name}\"`"
+    ],
+    "description": "Genus int field"
+  },
+  "Genus Bool Field": {
+    "prefix": "genusboolfield",
+    "body": [
+      "${1:FieldName} query.BoolField `json:\"${2:field_name}\"`"
+    ],
+    "description": "Genus bool field"
+  },
+  "Genus Time Field": {
+    "prefix": "genustimefield",
+    "body": [
+      "${1:FieldName} query.TimeField `json:\"${2:field_name}\"`"
+    ],
+    "description": "Genus time field"
+  },
+  "Genus HasMany": {
+    "prefix": "genushasmany",
+    "body": [
+      "${1:RelationName} []*${2:RelatedModel} `genus:\"hasMany,foreignKey:${3:ForeignKey}\"`"
+    ],
+    "description": "Genus HasMany relationship"
+  },
+  "Genus BelongsTo": {
+    "prefix": "genusbelongsto",
+    "body": [
+      "${1:RelationName}ID string `db:\"${2:relation_name}_id\"` ",
+      "${1:RelationName} *${3:RelatedModel} `genus:\"belongsTo,foreignKey:${1:RelationName}ID\"`"
+    ],
+    "description": "Genus BelongsTo relationship"
+  },
+  "Genus Command Handler": {
+    "prefix": "genuscommand",
+    "body": [
+      "type ${1:CommandName}Command struct {",
+      "\tcqrs.BaseCommand",
+      "\t${2:Field} ${3:Type}",
+      "}",
+      "",
+      "func New${1:CommandName}Command(${4:params}) *${1:CommandName}Command {",
+      "\treturn &${1:CommandName}Command{",
+      "\t\tBaseCommand: cqrs.NewBaseCommand(\"${1:CommandName}\"),",
+      "\t\t${2:Field}: ${5:value},",
+      "\t}",
+      "}",
+      "",
+      "type ${1:CommandName}Handler struct {",
+      "\t// dependencies",
+      "}",
+      "",
+      "func (h *${1:CommandName}Handler) Handle(ctx context.Context, cmd *${1:CommandName}Command) error {",
+      "\t$0",
+      "\treturn nil",
+      "}"
+    ],
+    "description": "Genus CQRS Command and Handler"
+  },
+  "Genus Query Handler": {
+    "prefix": "genusquery",
+    "body": [
+      "type ${1:QueryName}Query struct {",
+      "\tcqrs.BaseQuery",
+      "\t${2:Field} ${3:Type}",
+      "}",
+      "",
+      "type ${1:QueryName}Result struct {",
+      "\t${4:ResultField} ${5:ResultType}",
+      "}",
+      "",
+      "type ${1:QueryName}Handler struct {",
+      "\t// dependencies",
+      "}",
+      "",
+      "func (h *${1:QueryName}Handler) Handle(ctx context.Context, q *${1:QueryName}Query) (*${1:QueryName}Result, error) {",
+      "\t$0",
+      "\treturn &${1:QueryName}Result{}, nil",
+      "}"
+    ],
+    "description": "Genus CQRS Query and Handler"
+  },
+  "Genus Event": {
+    "prefix": "genusevent",
+    "body": [
+      "type ${1:EventName}Event struct {",
+      "\tAggregateID   string    `json:\"aggregate_id\"`",
+      "\tAggregateType string    `json:\"aggregate_type\"`",
+      "\tVersion       int64     `json:\"version\"`",
+      "\tTimestamp     time.Time `json:\"timestamp\"`",
+      "\t${2:Field}    ${3:Type} `json:\"${4:field}\"`",
+      "}",
+      "",
+      "func (e *${1:EventName}Event) EventType() string {",
+      "\treturn \"${1:EventName}\"",
+      "}"
+    ],
+    "description": "Genus Event Sourcing Event"
+  }
+}

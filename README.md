@@ -75,7 +75,7 @@ users, err := genus.Table[User](db).
 go get github.com/GabrielOnRails/genus@latest
 
 # Specific version (recommended for production)
-go get github.com/GabrielOnRails/genus@v6.0.0
+go get github.com/GabrielOnRails/genus@v7.0.0
 
 # Optional: CLI for code generation
 go install github.com/GabrielOnRails/genus/cmd/genus@latest
@@ -1111,22 +1111,46 @@ go run examples/migrations/main.go
 - [x] CQRS helpers
 - [x] Snapshots for aggregates
 
-### v7.x 🚧 Planned
-
-**AI & ML:**
-- [ ] Query cost prediction with ML
-- [ ] Automatic schema optimization suggestions
-- [ ] Natural language to SQL
+### v7.0 ✅ Implemented
 
 **Cloud Native:**
-- [ ] Kubernetes-native health checks
-- [ ] Distributed tracing improvements
-- [ ] Cloud database adapters (Aurora, Cloud SQL)
+- [x] Kubernetes-native health checks (/live, /ready, /startup)
+- [x] Distributed tracing (Jaeger, Zipkin)
+- [x] Cloud database adapters (Aurora, Cloud SQL, CockroachDB, PlanetScale, Neon)
+- [x] Serverless connection pooling (PgBouncer-compatible)
 
 **Developer Experience:**
-- [ ] Interactive query builder CLI
-- [ ] VS Code extension
-- [ ] Database migrations visualizer
+- [x] Interactive query builder CLI (REPL)
+- [x] VS Code extension (autocomplete, snippets, schema viewer)
+- [x] Database migrations visualizer (DAG)
+- [x] Query playground (web UI)
+
+### v8.x 🚧 Planned
+
+**Distributed Systems:**
+- [ ] Saga pattern (orchestration & choreography)
+- [ ] Two-phase commit (2PC) helpers
+- [ ] Outbox pattern for reliable events
+- [ ] Idempotency keys
+
+**Time-Travel:**
+- [ ] Temporal tables (automatic history)
+- [ ] Point-in-time queries (AS OF TIMESTAMP)
+- [ ] Audit trail with change diffs
+- [ ] Rollback to previous version
+
+**Geo-Distribution:**
+- [ ] Multi-region writes
+- [ ] Conflict resolution (CRDT, last-write-wins)
+- [ ] Geo-aware routing
+
+### v9.x 🔮 Future
+
+**Real-Time & Streaming:**
+- [ ] Change Data Capture (CDC)
+- [ ] WebSocket subscriptions
+- [ ] Live queries (auto-refresh)
+- [ ] Kafka integration
 
 ---
 

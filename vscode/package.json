@@ -1,0 +1,170 @@
+{
+  "name": "genus-orm",
+  "displayName": "Genus ORM",
+  "description": "VS Code extension for Genus ORM - Type-safe Go ORM",
+  "version": "1.0.0",
+  "publisher": "genus",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GabrielOnRails/genus"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "go",
+    "golang",
+    "orm",
+    "database",
+    "sql",
+    "postgres",
+    "mysql",
+    "sqlite"
+  ],
+  "activationEvents": [
+    "onLanguage:go",
+    "workspaceContains:**/*.go"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "genus.generateFields",
+        "title": "Genus: Generate Type-Safe Fields"
+      },
+      {
+        "command": "genus.generateMigration",
+        "title": "Genus: Generate Migration"
+      },
+      {
+        "command": "genus.runMigration",
+        "title": "Genus: Run Migrations"
+      },
+      {
+        "command": "genus.rollbackMigration",
+        "title": "Genus: Rollback Migration"
+      },
+      {
+        "command": "genus.showSchema",
+        "title": "Genus: Show Database Schema"
+      },
+      {
+        "command": "genus.previewQuery",
+        "title": "Genus: Preview SQL Query"
+      },
+      {
+        "command": "genus.openPlayground",
+        "title": "Genus: Open Query Playground"
+      },
+      {
+        "command": "genus.visualizeMigrations",
+        "title": "Genus: Visualize Migrations"
+      }
+    ],
+    "configuration": {
+      "title": "Genus ORM",
+      "properties": {
+        "genus.databaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Database connection URL"
+        },
+        "genus.driver": {
+          "type": "string",
+          "enum": ["postgres", "mysql", "sqlite3"],
+          "default": "postgres",
+          "description": "Database driver"
+        },
+        "genus.migrationsPath": {
+          "type": "string",
+          "default": "./migrations",
+          "description": "Path to migrations directory"
+        },
+        "genus.modelsPath": {
+          "type": "string",
+          "default": "./models",
+          "description": "Path to models directory"
+        },
+        "genus.autoGenerateFields": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-generate type-safe fields on save"
+        },
+        "genus.showSqlPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show SQL preview in hover"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "go",
+        "path": "./snippets/genus.json"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorLangId == go",
+          "command": "genus.generateFields",
+          "group": "genus"
+        },
+        {
+          "when": "editorLangId == go",
+          "command": "genus.previewQuery",
+          "group": "genus"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "genusSchema",
+          "name": "Database Schema",
+          "when": "genus.connected"
+        },
+        {
+          "id": "genusMigrations",
+          "name": "Migrations",
+          "when": "genus.connected"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "genus",
+          "title": "Genus ORM",
+          "icon": "images/genus-icon.svg"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.x",
+    "@typescript-eslint/parser": "^6.x",
+    "eslint": "^8.x",
+    "typescript": "^5.x"
+  },
+  "dependencies": {
+    "pg": "^8.11.0",
+    "mysql2": "^3.6.0",
+    "better-sqlite3": "^9.0.0"
+  }
+}

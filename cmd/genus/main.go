@@ -28,6 +28,16 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+	case "repl":
+		if err := runREPL(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "playground":
+		if err := runPlayground(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	case "version":
 		fmt.Printf("genus version %s\n", version)
 	case "help", "--help", "-h":
@@ -103,6 +113,8 @@ Usage:
 Commands:
   generate    Generate type-safe field definitions from Go structs
   migrate     Manage database migrations (up, down, status, create)
+  repl        Interactive query builder REPL
+  playground  Start web-based query playground
   version     Print version information
   help        Show this help message
 
