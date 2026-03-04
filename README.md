@@ -1073,8 +1073,28 @@ go run examples/migrations/main.go
 - [x] OpenTelemetry integration
 
 ### v5.x 🚧 Planned
-- [ ] GraphQL integration
+
+**Performance & Developer Experience:**
+- [ ] Cursor-based pagination (efficient for large datasets)
+- [ ] UPSERT/ON CONFLICT support
+- [ ] Query profiling / slow query detection
+- [ ] Dry run mode (preview SQL without executing)
 - [ ] Automatic query optimization
+
+**Data Types:**
+- [ ] JSON/JSONB field support with queries
+- [ ] Full-text search (PostgreSQL/MySQL native)
+
+**Security & Compliance:**
+- [ ] Automatic audit logging (who, when, what)
+- [ ] Row-level security for multi-tenant
+
+**Resilience:**
+- [ ] Connection retry with circuit breaker
+- [ ] Query timeout helpers per operation
+
+**Integration:**
+- [ ] GraphQL integration
 - [ ] Schema diff and migration generation
 - [ ] Multi-tenancy support
 - [ ] Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)

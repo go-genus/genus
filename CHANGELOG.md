@@ -1122,10 +1122,32 @@ var UserFields = struct {
 
 ### [5.0.0] - Planejado
 
-#### Future Features
+#### Performance & Developer Experience
+
+- Cursor-based pagination (mais eficiente que OFFSET para grandes datasets)
+- UPSERT/ON CONFLICT support (INSERT ... ON CONFLICT DO UPDATE)
+- Query profiling / slow query detection (detecção automática de queries lentas)
+- Dry run mode (visualizar SQL sem executar)
+- Automatic query optimization
+
+#### Data Types
+
+- JSON/JSONB field support com queries type-safe
+- Full-text search (PostgreSQL tsvector/tsquery, MySQL FULLTEXT)
+
+#### Security & Compliance
+
+- Automatic audit logging (tracking de mudanças: quem, quando, o quê)
+- Row-level security para multi-tenant apps
+
+#### Resilience
+
+- Connection retry com circuit breaker e exponential backoff
+- Query timeout helpers por operação
+
+#### Integration
 
 - GraphQL integration
-- Automatic query optimization
 - Schema diff and migration generation
 - Multi-tenancy support
 - Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
