@@ -75,7 +75,7 @@ users, err := genus.Table[User](db).
 go get github.com/GabrielOnRails/genus@latest
 
 # Specific version (recommended for production)
-go get github.com/GabrielOnRails/genus@v5.0.0
+go get github.com/GabrielOnRails/genus@v6.0.0
 
 # Optional: CLI for code generation
 go install github.com/GabrielOnRails/genus/cmd/genus@latest
@@ -1094,22 +1094,39 @@ go run examples/migrations/main.go
 - [x] Multi-tenancy support
 - [x] Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
 
-### v6.x 🚧 Planned
+### v6.0 ✅ Implemented
 
 **Query Intelligence:**
-- [ ] Automatic query optimization (index suggestions)
-- [ ] Query plan analysis and recommendations
-- [ ] N+1 query detection
+- [x] Automatic query optimization (index suggestions)
+- [x] Query plan analysis and recommendations
+- [x] N+1 query detection
 
 **Integration:**
-- [ ] GraphQL schema generation
-- [ ] gRPC support
-- [ ] Schema diff and migration generation
+- [x] GraphQL schema generation
+- [x] gRPC/Protobuf support
+- [x] Schema diff and migration generation
 
 **Advanced Features:**
-- [ ] Event sourcing support
-- [ ] CQRS helpers
-- [ ] Read-your-writes consistency helpers
+- [x] Event sourcing support
+- [x] CQRS helpers
+- [x] Snapshots for aggregates
+
+### v7.x 🚧 Planned
+
+**AI & ML:**
+- [ ] Query cost prediction with ML
+- [ ] Automatic schema optimization suggestions
+- [ ] Natural language to SQL
+
+**Cloud Native:**
+- [ ] Kubernetes-native health checks
+- [ ] Distributed tracing improvements
+- [ ] Cloud database adapters (Aurora, Cloud SQL)
+
+**Developer Experience:**
+- [ ] Interactive query builder CLI
+- [ ] VS Code extension
+- [ ] Database migrations visualizer
 
 ---
 

@@ -5,6 +5,376 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0] - 2026-03-04
+
+### Adicionado - Versão 6.0 (Query Intelligence & Advanced Patterns)
+
+#### 1. Automatic Query Optimization
+
+**Motivação:** Analisar queries e sugerir índices automaticamente para melhorar performance.
+
+**Funcionalidades:**
+
+- `QueryOptimizer` - Analisador de queries
+- `QueryAnalysis` - Resultado com custo estimado, seq scans, recomendações
+- `IndexSuggestion` - Sugestões de índices com SQL de criação
+- `GetTableStats()` - Estatísticas de tabelas (PostgreSQL/MySQL)
+- `ListUnusedIndexes()` / `ListDuplicateIndexes()` - Manutenção de índices
+- `AutoIndex()` - Criação automática de índices sugeridos
+
+**Exemplo:**
+
+```go
+optimizer := query.NewQueryOptimizer(db, dialect)
+
+// Analisar query
+analysis, _ := optimizer.Analyze(ctx, "SELECT * FROM users WHERE email = $1", "test@example.com")
+
+fmt.Println("Estimated cost:", analysis.EstimatedCost)
+fmt.Println("Seq scans:", analysis.SeqScans)
+fmt.Println("Recommendations:", analysis.Recommendations)
+
+// Sugestões de índices
+for _, idx := range analysis.MissingIndexes {
+    fmt.Printf("Suggested: %s (impact: %s)\n", idx.CreateSQL, idx.Impact)
+}
+
+// Criar índices automaticamente
+optimizer.AutoIndex(ctx, analysis, false)
+
+// Via Builder
+analysis, _ = genus.Table[User](db).
+    Where(UserFields.Email.Eq("test@example.com")).
+    Optimize(ctx)
+```
+
+**Arquivos:**
+- `query/optimizer.go` - Query optimizer completo
+
+---
+
+#### 2. N+1 Query Detection
+
+**Motivação:** Detectar automaticamente problemas de N+1 queries em tempo de execução.
+
+**Funcionalidades:**
+
+- `N1Detector` - Detector de queries N+1
+- `N1DetectorConfig` - Configuração (threshold, time window)
+- `N1Detection` - Detecção com pattern, count, suggestion
+- `N1DetectorExecutor` - Executor com detecção automática
+- `GenerateReport()` / `PrintReport()` - Relatórios de N+1
+
+**Exemplo:**
+
+```go
+detector := query.NewN1Detector(query.N1DetectorConfig{
+    Enabled:    true,
+    Threshold:  5,
+    TimeWindow: 100 * time.Millisecond,
+    OnDetection: func(det query.N1Detection) {
+        log.Printf("N+1 DETECTED: %s (count: %d)\n%s",
+            det.Pattern, det.Count, det.Suggestion)
+    },
+})
+
+// Usar executor com detecção
+executor := query.NewN1DetectorExecutor(db, detector)
+
+// Gerar relatório
+fmt.Println(detector.PrintReport())
+```
+
+**Arquivos:**
+- `query/n1detector.go` - N+1 detector
+
+---
+
+#### 3. GraphQL Schema Generation
+
+**Motivação:** Gerar schemas GraphQL automaticamente a partir de models Go.
+
+**Funcionalidades:**
+
+- `SchemaGenerator` - Gerador de schema GraphQL
+- `RegisterType()` - Registra models para geração
+- `GenerateSchema()` - Gera schema completo
+- Suporte a: Types, Inputs, Enums, Connections (Relay)
+- Geração automática de: Query type, Mutation type, Filters, OrderBy
+
+**Exemplo:**
+
+```go
+gen := graphql.NewSchemaGenerator()
+
+// Registrar models
+gen.RegisterType(User{})
+gen.RegisterType(Post{})
+
+// Adicionar enums customizados
+gen.AddEnum("UserStatus", []string{"ACTIVE", "INACTIVE", "PENDING"})
+
+// Gerar schema
+schema := gen.GenerateSchema()
+fmt.Println(schema)
+
+// Output:
+// type User {
+//   id: ID!
+//   name: String!
+//   email: String!
+//   posts: [Post!]!
+// }
+//
+// type Query {
+//   user(id: ID!): User
+//   users(first: Int, after: String, filter: UserFilter): UserConnection!
+// }
+//
+// type Mutation {
+//   createUser(input: UserInput!): User!
+//   updateUser(id: ID!, input: UserInput!): User!
+//   deleteUser(id: ID!): Boolean!
+// }
+```
+
+**Arquivos:**
+- `graphql/schema.go` - GraphQL schema generator
+
+---
+
+#### 4. gRPC/Protobuf Support
+
+**Motivação:** Gerar arquivos .proto automaticamente para serviços gRPC.
+
+**Funcionalidades:**
+
+- `ProtoGenerator` - Gerador de arquivos .proto
+- `RegisterMessage()` - Registra models como messages
+- `GenerateProto()` - Gera arquivo .proto completo
+- Geração automática de: Messages, Services CRUD, Streaming
+- Suporte a: timestamps, field masks, pagination
+
+**Exemplo:**
+
+```go
+gen := grpc.NewProtoGenerator("myapp", "github.com/myapp/proto")
+
+// Registrar models
+gen.RegisterMessage(User{})
+gen.RegisterMessage(Post{})
+
+// Gerar .proto
+proto := gen.GenerateProto()
+fmt.Println(proto)
+
+// Output:
+// syntax = "proto3";
+// package myapp;
+//
+// import "google/protobuf/timestamp.proto";
+//
+// message User {
+//   int64 id = 1;
+//   string name = 2;
+//   string email = 3;
+//   google.protobuf.Timestamp created_at = 4;
+// }
+//
+// service UserService {
+//   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+//   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+//   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+//   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+//   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+//   rpc WatchUsers(ListUsersRequest) returns (stream User);
+// }
+```
+
+**Arquivos:**
+- `grpc/proto.go` - Protobuf/gRPC generator
+
+---
+
+#### 5. Schema Diff & Migration Generation
+
+**Motivação:** Comparar schemas e gerar migrações automaticamente.
+
+**Funcionalidades:**
+
+- `SchemaDiffer` - Compara schemas de banco
+- `GetCurrentSchema()` - Obtém schema atual do banco
+- `GetSchemaFromModels()` - Gera schema a partir de structs
+- `Diff()` - Compara e retorna mudanças
+- `GenerateMigration()` - Gera SQL de migração
+- Suporte a: ADD/DROP TABLE, ADD/DROP/MODIFY COLUMN
+
+**Exemplo:**
+
+```go
+differ := migrate.NewSchemaDiffer(db, dialect)
+
+// Obter schema atual
+current, _ := differ.GetCurrentSchema(ctx)
+
+// Schema desejado (a partir dos models)
+target := differ.GetSchemaFromModels(User{}, Post{}, Comment{})
+
+// Comparar
+changes := differ.Diff(current, target)
+
+for _, change := range changes {
+    fmt.Printf("%s: %s\n", change.Type, change.Description)
+    fmt.Println(change.SQL)
+}
+
+// Gerar arquivo de migração
+migration := differ.GenerateMigration(changes)
+fmt.Println(migration)
+```
+
+**Arquivos:**
+- `migrate/diff.go` - Schema diff e migration generation
+
+---
+
+#### 6. Event Sourcing
+
+**Motivação:** Suporte completo a event sourcing para sistemas baseados em eventos.
+
+**Funcionalidades:**
+
+- `EventStore` - Armazenamento de eventos
+- `Event` - Estrutura de evento com aggregate, version, data
+- `Aggregate` / `BaseAggregate` - Interface e implementação base
+- `AggregateRepository` - Repository para aggregates
+- `SnapshotStore` - Armazenamento de snapshots
+- `EventBus` - Publicação/subscrição de eventos
+
+**Exemplo:**
+
+```go
+// Event Store
+store := eventsourcing.NewEventStore(db, dialect, eventsourcing.DefaultEventStoreConfig())
+store.CreateTable(ctx)
+
+// Definir aggregate
+type UserAggregate struct {
+    eventsourcing.BaseAggregate
+    Name  string
+    Email string
+}
+
+func (u *UserAggregate) Apply(event eventsourcing.Event) error {
+    switch event.EventType {
+    case "UserCreated":
+        u.Name = event.Data["name"].(string)
+        u.Email = event.Data["email"].(string)
+    case "UserNameChanged":
+        u.Name = event.Data["name"].(string)
+    }
+    return nil
+}
+
+// Criar aggregate
+user := &UserAggregate{
+    BaseAggregate: eventsourcing.BaseAggregate{ID: "user-1", Type: "User"},
+}
+user.RaiseEvent("UserCreated", map[string]interface{}{
+    "name":  "John",
+    "email": "john@example.com",
+})
+
+// Salvar eventos
+store.Append(ctx, user.GetUncommittedEvents()...)
+
+// Event Bus
+bus := eventsourcing.NewEventBus()
+bus.Subscribe("UserCreated", func(ctx context.Context, event eventsourcing.Event) error {
+    fmt.Printf("User created: %v\n", event.Data)
+    return nil
+})
+```
+
+**Arquivos:**
+- `eventsourcing/event.go` - Event sourcing completo
+
+---
+
+#### 7. CQRS Helpers
+
+**Motivação:** Implementação do padrão Command Query Responsibility Segregation.
+
+**Funcionalidades:**
+
+- `CommandBus` - Despacho de comandos
+- `QueryBus` - Despacho de queries
+- `Mediator` - Centraliza command e query bus
+- Middleware: Logging, Validation, Caching
+- `ReadModelProjection` - Projeção de eventos em read models
+
+**Exemplo:**
+
+```go
+// Definir comando
+type CreateUserCommand struct {
+    cqrs.BaseCommand
+    Name  string
+    Email string
+}
+
+func (c CreateUserCommand) CommandName() string { return "CreateUser" }
+
+// Registrar handler
+bus := cqrs.NewCommandBus()
+cqrs.RegisterFunc(bus, func(ctx context.Context, cmd CreateUserCommand) error {
+    // Criar usuário...
+    return nil
+})
+
+// Middleware
+bus.Use(cqrs.LoggingMiddleware(log.Printf))
+bus.Use(cqrs.AutoValidationMiddleware())
+
+// Executar comando
+cqrs.Dispatch(ctx, bus, CreateUserCommand{Name: "John", Email: "john@example.com"})
+
+// Definir query
+type GetUserQuery struct {
+    cqrs.BaseQuery
+    ID string
+}
+
+func (q GetUserQuery) QueryName() string { return "GetUser" }
+
+// Registrar handler de query
+queryBus := cqrs.NewQueryBus()
+cqrs.RegisterQueryFunc(queryBus, func(ctx context.Context, q GetUserQuery) (*User, error) {
+    // Buscar usuário...
+    return &User{}, nil
+})
+
+// Executar query
+user, _ := cqrs.Ask[GetUserQuery, *User](ctx, queryBus, GetUserQuery{ID: "123"})
+
+// Mediator (combina command + query)
+mediator := cqrs.NewMediator()
+cqrs.Send(ctx, mediator, CreateUserCommand{})
+user, _ = cqrs.Request[GetUserQuery, *User](ctx, mediator, GetUserQuery{ID: "123"})
+```
+
+**Arquivos:**
+- `cqrs/cqrs.go` - CQRS helpers completos
+
+---
+
+### Testes Adicionados
+
+- Todos os arquivos compilam sem erros
+- Testes existentes continuam passando
+
+---
+
 ## [5.0.0] - 2026-03-04
 
 ### Adicionado - Versão 5.0 (Production-Ready Features)
