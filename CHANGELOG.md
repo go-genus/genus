@@ -5,6 +5,500 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-03-04
+
+### Adicionado - Versão 5.0 (Production-Ready Features)
+
+#### 1. Cursor-Based Pagination
+
+**Motivação:** Paginação eficiente e estável para grandes datasets, compatível com GraphQL Relay spec.
+
+**Funcionalidades:**
+
+- `Cursor` - Tipo opaco para cursores de paginação
+- `CursorPage[T]` - Resultado de paginação com Items, HasNextPage, HasPreviousPage
+- `CursorConfig` - Configuração com OrderBy, First/After, Last/Before
+- `EncodeCursor()` / `DecodeCursor()` - Serialização segura de cursores
+- Suporte a GraphQL Relay: `Connection[T]`, `Edge[T]`, `PageInfo`
+
+**Exemplo:**
+
+```go
+page, _ := genus.Table[User](db).
+    Where(UserFields.Active.Eq(true)).
+    Paginate(query.CursorConfig{
+        OrderBy:   "created_at",
+        OrderDesc: true,
+        First:     10,
+    }).
+    Fetch(ctx)
+
+for _, user := range page.Items {
+    fmt.Println(user.Name)
+}
+
+// Próxima página
+if page.HasNextPage {
+    nextPage, _ := genus.Table[User](db).
+        Paginate(query.CursorConfig{
+            OrderBy:   "created_at",
+            OrderDesc: true,
+            First:     10,
+            After:     page.EndCursor,
+        }).
+        Fetch(ctx)
+}
+
+// Converter para formato GraphQL Relay
+connection := page.ToConnection(func(u User) query.Cursor {
+    return query.EncodeCursor("created_at", u.CreatedAt, u.ID)
+})
+```
+
+**Arquivos:**
+- `query/cursor.go` - Cursor pagination completo
+
+---
+
+#### 2. UPSERT / ON CONFLICT
+
+**Motivação:** Operações de insert-or-update atômicas para PostgreSQL e MySQL.
+
+**Funcionalidades:**
+
+- `UpsertConfig` - Configuração de conflito e colunas a atualizar
+- `Upsert()` / `UpsertWithConfig()` - Upsert de registro único
+- `BatchUpsert()` / `BatchUpsertWithConfig()` - Upsert em lote
+- Suporte a PostgreSQL (`ON CONFLICT DO UPDATE`) e MySQL (`ON DUPLICATE KEY UPDATE`)
+- Opção `DoNothing` para ignorar conflitos
+- `UpdateWhere` para updates condicionais
+
+**Exemplo:**
+
+```go
+// Upsert simples (usa id como coluna de conflito)
+user := &User{Email: "test@example.com", Name: "Test"}
+db.DB().Upsert(ctx, user)
+
+// Upsert com configuração
+db.DB().UpsertWithConfig(ctx, user, core.UpsertConfig{
+    ConflictColumns: []string{"email"},
+    UpdateColumns:   []string{"name", "updated_at"},
+})
+
+// Batch upsert
+users := []*User{
+    {Email: "a@test.com", Name: "A"},
+    {Email: "b@test.com", Name: "B"},
+}
+db.DB().BatchUpsert(ctx, users)
+
+// Ignorar conflitos
+db.DB().UpsertWithConfig(ctx, user, core.UpsertConfig{
+    DoNothing: true,
+})
+```
+
+**Arquivos:**
+- `core/upsert.go` - Implementação completa de upsert
+
+---
+
+#### 3. Dry Run Mode / Query Preview
+
+**Motivação:** Visualizar SQL gerado sem executar, útil para debug e logging.
+
+**Funcionalidades:**
+
+- `DryRunBuilder[T]` - Builder para preview de queries
+- `DryRunResult` - Resultado com SQL, Args, FormattedSQL, Operation, Table
+- `ToSQL()` - Retorna SQL e argumentos diretamente
+- `Explain()` / `ExplainAnalyze()` - Preview e execução de EXPLAIN
+
+**Exemplo:**
+
+```go
+// Preview de SELECT
+result := genus.Table[User](db).
+    Where(UserFields.Age.Gt(18)).
+    OrderByDesc("created_at").
+    Limit(10).
+    DryRun().
+    Select()
+
+fmt.Println(result.SQL)
+// SELECT * FROM "users" WHERE age > $1 ORDER BY created_at DESC LIMIT 10
+fmt.Println(result.Args)
+// [18]
+fmt.Println(result.FormattedSQL)
+// SELECT * FROM "users" WHERE age > 18 ORDER BY created_at DESC LIMIT 10
+
+// Obter SQL diretamente
+sql, args := genus.Table[User](db).
+    Where(UserFields.Active.Eq(true)).
+    ToSQL()
+
+// Executar EXPLAIN
+results, _ := genus.Table[User](db).
+    Where(UserFields.Age.Gt(18)).
+    Explain(ctx)
+for _, r := range results {
+    fmt.Println(r.Plan)
+}
+```
+
+**Arquivos:**
+- `query/dryrun.go` - Dry run e EXPLAIN
+
+---
+
+#### 4. Query Timeout Helpers
+
+**Motivação:** Configurar timeouts de forma simples por query.
+
+**Funcionalidades:**
+
+- `WithTimeout(duration)` - Adiciona timeout a qualquer query
+- Métodos `Find()`, `First()`, `Count()` com timeout
+- `DefaultQueryTimeout` - Timeout padrão global
+
+**Exemplo:**
+
+```go
+users, err := genus.Table[User](db).
+    Where(UserFields.Active.Eq(true)).
+    WithTimeout(5 * time.Second).
+    Find(ctx)
+
+// Timeout no count
+count, err := genus.Table[User](db).
+    WithTimeout(2 * time.Second).
+    Count(ctx)
+```
+
+**Arquivos:**
+- `query/timeout.go` - Timeout helpers
+
+---
+
+#### 5. JSON/JSONB Field Support
+
+**Motivação:** Suporte nativo a campos JSON com queries tipadas.
+
+**Funcionalidades:**
+
+- `JSON[T]` - Tipo genérico para campos JSON com Scan/Value
+- `JSONField` - Builder de queries para campos JSON
+- `JSONPath` - Acesso a caminhos dentro do JSON
+- Operadores PostgreSQL: `@>`, `<@`, `?`, `?|`, `?&`
+- `JSONRaw` - JSON bruto como string
+
+**Exemplo:**
+
+```go
+type User struct {
+    ID       int64              `db:"id"`
+    Metadata query.JSON[map[string]interface{}] `db:"metadata"`
+}
+
+// Criar JSON
+user := &User{
+    Metadata: query.NewJSON(map[string]interface{}{
+        "preferences": map[string]interface{}{
+            "theme": "dark",
+        },
+    }),
+}
+
+// Query em campo JSON
+metaField := query.NewJSONField("metadata")
+
+// Acessar caminho
+users, _ := genus.Table[User](db).
+    Where(metaField.Path("preferences", "theme").EqText("dark")).
+    Find(ctx)
+
+// JSON contains (PostgreSQL)
+users, _ := genus.Table[User](db).
+    WhereRaw(metaField.Contains(map[string]string{"role": "admin"})).
+    Find(ctx)
+```
+
+**Arquivos:**
+- `query/json.go` - JSON types e queries
+
+---
+
+#### 6. Full-Text Search
+
+**Motivação:** Busca full-text nativa para PostgreSQL e MySQL.
+
+**Funcionalidades:**
+
+- `SimpleSearch()` - Busca simples em uma coluna
+- `MultiColumnSearch()` - Busca em múltiplas colunas
+- `WeightedSearch()` - Busca com pesos (PostgreSQL)
+- `SimpleSearchMySQL()` / `BooleanSearchMySQL()` - MySQL MATCH AGAINST
+- `LikeSearch()` / `ILikeSearch()` - Fallback com LIKE
+
+**Exemplo:**
+
+```go
+// PostgreSQL full-text search
+users, _ := genus.Table[User](db).
+    WhereRaw(query.SimpleSearch("name", "john")).
+    Find(ctx)
+
+// Múltiplas colunas
+users, _ := genus.Table[User](db).
+    WhereRaw(query.MultiColumnSearch(
+        []string{"name", "bio", "email"},
+        "developer",
+        "english",
+    )).
+    Find(ctx)
+
+// MySQL MATCH AGAINST
+users, _ := genus.Table[User](db).
+    WhereRaw(query.SimpleSearchMySQL([]string{"name", "bio"}, "john")).
+    Find(ctx)
+
+// Busca booleana MySQL
+users, _ := genus.Table[User](db).
+    WhereRaw(query.BooleanSearchMySQL([]string{"name"}, "+john -doe")).
+    Find(ctx)
+```
+
+**Arquivos:**
+- `query/fulltext.go` - Full-text search
+
+---
+
+#### 7. Query Profiler / Slow Query Detection
+
+**Motivação:** Monitorar performance de queries e detectar queries lentas.
+
+**Funcionalidades:**
+
+- `Profiler` - Coleta estatísticas de queries
+- `ProfilerConfig` - Configuração (threshold, callbacks)
+- `QueryStats` - Estatísticas por query (duration, rows, etc)
+- `ProfilerSummary` - Resumo agregado
+- `ProfiledExecutor` - Executor com profiling automático
+
+**Exemplo:**
+
+```go
+// Criar profiler
+config := core.DefaultProfilerConfig()
+config.Enabled = true
+config.SlowQueryThreshold = 100 * time.Millisecond
+config.OnSlowQuery = func(stats core.QueryStats) {
+    log.Printf("SLOW QUERY: %s (%v)", stats.SQL, stats.Duration)
+}
+profiler := core.NewProfiler(config)
+
+// Usar executor com profiling
+executor := core.NewProfiledExecutor(db, profiler)
+
+// Ver estatísticas
+summary := profiler.Summary()
+fmt.Printf("Total: %d queries, Slow: %d, Avg: %v\n",
+    summary.TotalQueries, summary.SlowQueries, summary.AverageDuration)
+
+// Listar queries lentas
+for _, q := range profiler.GetSlowQueries() {
+    fmt.Printf("%v: %s\n", q.Duration, q.SQL)
+}
+```
+
+**Arquivos:**
+- `core/profiler.go` - Query profiler
+
+---
+
+#### 8. Automatic Audit Logging
+
+**Motivação:** Rastrear todas as mudanças em dados para compliance e debugging.
+
+**Funcionalidades:**
+
+- `Auditor` - Gerenciador de auditoria
+- `AuditEntry` - Registro de auditoria (table, action, old/new values, user, timestamp)
+- `AuditConfig` - Configuração (tabelas excluídas, colunas excluídas, callbacks)
+- Métodos `LogCreate()`, `LogUpdate()`, `LogDelete()`, `LogRead()`
+- `CreateAuditTable()` - Cria tabela de auditoria
+- `GetAuditHistory()` - Consulta histórico
+
+**Exemplo:**
+
+```go
+// Configurar auditor
+config := core.AuditConfig{
+    Enabled:    true,
+    AuditTable: "audit_logs",
+    ExcludeColumns: []string{"password", "token"},
+    GetCurrentUser: func(ctx context.Context) string {
+        return ctx.Value("user_id").(string)
+    },
+}
+auditor := core.NewAuditor(db, dialect, config)
+
+// Criar tabela de auditoria
+auditor.CreateAuditTable(ctx)
+
+// Registrar operações
+auditor.LogCreate(ctx, "users", user.ID, user)
+auditor.LogUpdate(ctx, "users", user.ID, oldUser, newUser)
+auditor.LogDelete(ctx, "users", user.ID, user)
+
+// Consultar histórico
+history, _ := auditor.GetAuditHistory(ctx, "users", userID)
+```
+
+**Arquivos:**
+- `core/audit.go` - Audit logging
+
+---
+
+#### 9. Circuit Breaker / Connection Retry
+
+**Motivação:** Resiliência em caso de falhas de conexão.
+
+**Funcionalidades:**
+
+- `CircuitBreaker` - Implementação do padrão circuit breaker
+- Estados: `Closed`, `Open`, `HalfOpen`
+- `CircuitBreakerConfig` - Configuração (thresholds, timeout)
+- `CircuitBreakerExecutor` - Executor com circuit breaker
+- `RetryConfig` - Configuração de retry com backoff exponencial
+- `WithRetry[T]()` - Função genérica para retry
+
+**Exemplo:**
+
+```go
+// Circuit breaker
+cb := core.NewCircuitBreaker(core.CircuitBreakerConfig{
+    FailureThreshold: 5,
+    SuccessThreshold: 2,
+    Timeout:          30 * time.Second,
+    OnStateChange: func(from, to core.CircuitState) {
+        log.Printf("Circuit breaker: %s -> %s", from, to)
+    },
+})
+
+executor := core.NewCircuitBreakerExecutor(db, cb)
+
+// Retry com backoff
+result, err := core.WithRetry(ctx, core.DefaultRetryConfig(), func() (*User, error) {
+    return genus.Table[User](db).First(ctx)
+})
+```
+
+**Arquivos:**
+- `core/circuit_breaker.go` - Circuit breaker e retry
+
+---
+
+#### 10. Multi-Tenancy Support
+
+**Motivação:** Isolar dados por tenant em aplicações SaaS.
+
+**Funcionalidades:**
+
+- Estratégias: `TenantColumn`, `TenantSchema`, `TenantDatabase`
+- `WithTenant(ctx, tenantID)` - Adiciona tenant ao contexto
+- `TenantScope` - Escopo de tenant para queries
+- `TenantMiddleware` - Middleware para aplicar tenant automaticamente
+- `Tenant` - Mixin para models
+- Row-Level Security (PostgreSQL): `CreateRLSPolicy()`, `SetTenantSession()`
+
+**Exemplo:**
+
+```go
+// Adicionar tenant ao contexto
+ctx = core.WithTenant(ctx, "acme-corp")
+
+// Modelo com tenant
+type User struct {
+    core.Model
+    core.Tenant  // Embedded - adiciona tenant_id
+    Name string `db:"name"`
+}
+
+// Middleware
+middleware := core.NewTenantMiddleware(core.TenantConfig{
+    Strategy:   core.TenantColumn,
+    ColumnName: "tenant_id",
+}, dialect)
+
+// Row-Level Security (PostgreSQL)
+core.CreateRLSPolicy(ctx, executor, dialect, "users", core.DefaultRowLevelSecurityConfig())
+core.SetTenantSession(ctx, executor, "acme-corp")
+```
+
+**Arquivos:**
+- `core/tenant.go` - Multi-tenancy
+
+---
+
+#### 11. Real-Time Subscriptions (PostgreSQL LISTEN/NOTIFY)
+
+**Motivação:** Notificações em tempo real de mudanças no banco de dados.
+
+**Funcionalidades:**
+
+- `SubscriptionManager` - Gerenciador de subscriptions
+- `Subscribe()` - Inscrever-se para notificações
+- `NotifyPayload` - Payload de notificação (table, action, old/new values)
+- `ChangeStream` - Stream de mudanças com channel
+- `CreateNotifyTrigger()` - Cria trigger automático
+- `ReadYourWritesHelper` - Helper para consistência read-your-writes
+
+**Exemplo:**
+
+```go
+// Criar gerenciador
+manager := core.NewSubscriptionManager(db, dialect, core.DefaultSubscriptionConfig())
+
+// Criar trigger para notificações automáticas
+manager.CreateNotifyTrigger(ctx, "users")
+
+// Inscrever-se para notificações
+sub, _ := manager.Subscribe(ctx, "users", func(payload core.NotifyPayload) {
+    fmt.Printf("User %s: ID=%v\n", payload.Action, payload.RecordID)
+})
+defer sub.Cancel()
+
+// Usar ChangeStream
+stream, _ := manager.NewChangeStream(ctx, "orders", 100)
+defer stream.Close()
+
+for change := range stream.Changes() {
+    fmt.Printf("Order %s: %v\n", change.Action, change.NewValues)
+}
+
+// Watch com filtros
+sub, _ = manager.Watch(ctx, "users", core.WatchConfig{
+    Actions: []string{"INSERT", "UPDATE"},
+    Filter: func(p core.NotifyPayload) bool {
+        return p.NewValues["status"] == "active"
+    },
+}, handler)
+```
+
+**Arquivos:**
+- `core/subscription.go` - Real-time subscriptions
+
+---
+
+### Testes Adicionados
+
+- Todos os arquivos compilam sem erros
+- Testes existentes continuam passando
+
+---
+
 ## [4.0.0] - 2026-03-04
 
 ### Adicionado - Versão 4.0 (Enterprise Features)

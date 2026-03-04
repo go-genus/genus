@@ -75,7 +75,7 @@ users, err := genus.Table[User](db).
 go get github.com/GabrielOnRails/genus@latest
 
 # Specific version (recommended for production)
-go get github.com/GabrielOnRails/genus@v4.0.0
+go get github.com/GabrielOnRails/genus@v5.0.0
 
 # Optional: CLI for code generation
 go install github.com/GabrielOnRails/genus/cmd/genus@latest
@@ -1072,32 +1072,44 @@ go run examples/migrations/main.go
 - [x] Database sharding support (modulo, consistent hash)
 - [x] OpenTelemetry integration
 
-### v5.x 🚧 Planned
+### v5.0 ✅ Implemented
 
 **Performance & Developer Experience:**
-- [ ] Cursor-based pagination (efficient for large datasets)
-- [ ] UPSERT/ON CONFLICT support
-- [ ] Query profiling / slow query detection
-- [ ] Dry run mode (preview SQL without executing)
-- [ ] Automatic query optimization
+- [x] Cursor-based pagination (efficient for large datasets)
+- [x] UPSERT/ON CONFLICT support
+- [x] Query profiling / slow query detection
+- [x] Dry run mode (preview SQL without executing)
+- [x] Query timeout helpers per operation
 
 **Data Types:**
-- [ ] JSON/JSONB field support with queries
-- [ ] Full-text search (PostgreSQL/MySQL native)
+- [x] JSON/JSONB field support with queries
+- [x] Full-text search (PostgreSQL/MySQL native)
 
 **Security & Compliance:**
-- [ ] Automatic audit logging (who, when, what)
-- [ ] Row-level security for multi-tenant
+- [x] Automatic audit logging (who, when, what)
+- [x] Row-level security for multi-tenant
 
 **Resilience:**
-- [ ] Connection retry with circuit breaker
-- [ ] Query timeout helpers per operation
+- [x] Connection retry with circuit breaker
+- [x] Multi-tenancy support
+- [x] Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
+
+### v6.x 🚧 Planned
+
+**Query Intelligence:**
+- [ ] Automatic query optimization (index suggestions)
+- [ ] Query plan analysis and recommendations
+- [ ] N+1 query detection
 
 **Integration:**
-- [ ] GraphQL integration
+- [ ] GraphQL schema generation
+- [ ] gRPC support
 - [ ] Schema diff and migration generation
-- [ ] Multi-tenancy support
-- [ ] Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
+
+**Advanced Features:**
+- [ ] Event sourcing support
+- [ ] CQRS helpers
+- [ ] Read-your-writes consistency helpers
 
 ---
 
