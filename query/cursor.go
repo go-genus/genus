@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // Cursor representa um cursor opaco para paginação.

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GabrielOnRails/genus/codegen"
+	"github.com/go-genus/genus/codegen"
 )
 
 const version = "1.0.0"

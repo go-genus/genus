@@ -1,7 +1,7 @@
 package scanner
 
 import (
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // User model for demonstrating generated scanners.

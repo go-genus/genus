@@ -3,10 +3,10 @@ package dialects
 import (
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/dialects/mysql"
-	"github.com/GabrielOnRails/genus/dialects/postgres"
-	"github.com/GabrielOnRails/genus/dialects/sqlite"
+	"github.com/go-genus/genus/core"
+	"github.com/go-genus/genus/dialects/mysql"
+	"github.com/go-genus/genus/dialects/postgres"
+	"github.com/go-genus/genus/dialects/sqlite"
 )
 
 // DetectDialect returns the appropriate dialect based on the driver name.

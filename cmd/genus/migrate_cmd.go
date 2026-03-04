@@ -10,9 +10,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/dialects"
-	"github.com/GabrielOnRails/genus/migrate"
+	"github.com/go-genus/genus/core"
+	"github.com/go-genus/genus/dialects"
+	"github.com/go-genus/genus/migrate"
 )
 
 func runMigrate() error {
@@ -254,7 +254,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // Migration{{.Version}} - {{.Name}}

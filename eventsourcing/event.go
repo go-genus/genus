@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // Event representa um evento de domínio.

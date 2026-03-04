@@ -9,7 +9,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // FastBuilder is a high-performance query builder optimized for speed.

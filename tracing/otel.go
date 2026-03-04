@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // SpanKind representa o tipo de span.

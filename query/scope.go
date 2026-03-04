@@ -1,6 +1,6 @@
 package query
 
-import "github.com/GabrielOnRails/genus/core"
+import "github.com/go-genus/genus/core"
 
 // Scope é uma função que modifica um query builder.
 // Scopes podem ser usados para aplicar condições globais a queries.

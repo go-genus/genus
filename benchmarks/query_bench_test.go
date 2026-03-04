@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GabrielOnRails/genus"
-	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/dialects"
-	"github.com/GabrielOnRails/genus/query"
+	"github.com/go-genus/genus"
+	"github.com/go-genus/genus/core"
+	"github.com/go-genus/genus/dialects"
+	"github.com/go-genus/genus/query"
 
 	_ "github.com/mattn/go-sqlite3"
 )

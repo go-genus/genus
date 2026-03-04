@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/GabrielOnRails/genus"
-	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/query"
+	"github.com/go-genus/genus"
+	"github.com/go-genus/genus/core"
+	"github.com/go-genus/genus/query"
 )
 
 // User é o modelo de usuário com Model embedded.

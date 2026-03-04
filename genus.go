@@ -5,11 +5,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
-	"github.com/GabrielOnRails/genus/dialects"
-	"github.com/GabrielOnRails/genus/query"
-	"github.com/GabrielOnRails/genus/sharding"
-	"github.com/GabrielOnRails/genus/tracing"
+	"github.com/go-genus/genus/core"
+	"github.com/go-genus/genus/dialects"
+	"github.com/go-genus/genus/query"
+	"github.com/go-genus/genus/sharding"
+	"github.com/go-genus/genus/tracing"
 )
 
 // Genus é a interface pública principal do ORM.

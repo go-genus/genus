@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // PreparedQuery is a pre-built query that can be executed multiple times with different arguments.

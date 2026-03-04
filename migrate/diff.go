@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // SchemaChange representa uma mudança de schema.

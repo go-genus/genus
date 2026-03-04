@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // IndexSuggestion representa uma sugestão de índice.

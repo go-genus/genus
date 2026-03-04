@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/GabrielOnRails/genus/sharding"
+	"github.com/go-genus/genus/sharding"
 )
 
 // ShardExecutor implementa Executor para queries sharded.

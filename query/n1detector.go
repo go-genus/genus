@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // N1Detection representa uma detecção de N+1 query.

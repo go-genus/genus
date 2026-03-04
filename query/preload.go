@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // PreloadSpec especifica quais relacionamentos eager load.

@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // MigrationNode representa um nó no DAG de migrações.

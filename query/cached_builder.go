@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/GabrielOnRails/genus/cache"
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/cache"
+	"github.com/go-genus/genus/core"
 )
 
 // CachedBuilder é um wrapper do Builder que adiciona suporte a cache.

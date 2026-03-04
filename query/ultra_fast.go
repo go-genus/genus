@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // UltraFastBuilder is a zero-reflection query builder for maximum performance.

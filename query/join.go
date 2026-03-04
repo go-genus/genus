@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // JoinType representa os tipos de JOIN SQL.

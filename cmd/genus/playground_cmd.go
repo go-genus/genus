@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/GabrielOnRails/genus/playground"
+	"github.com/go-genus/genus/playground"
 
 	_ "github.com/lib/pq"
 )

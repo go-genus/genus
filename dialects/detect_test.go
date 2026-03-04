@@ -3,9 +3,9 @@ package dialects
 import (
 	"testing"
 
-	"github.com/GabrielOnRails/genus/dialects/mysql"
-	"github.com/GabrielOnRails/genus/dialects/postgres"
-	"github.com/GabrielOnRails/genus/dialects/sqlite"
+	"github.com/go-genus/genus/dialects/mysql"
+	"github.com/go-genus/genus/dialects/postgres"
+	"github.com/go-genus/genus/dialects/sqlite"
 )
 
 func TestDetectDialect(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/GabrielOnRails/genus
+module github.com/go-genus/genus
 
 go 1.24.0
 

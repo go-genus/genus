@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // Builder é o query builder genérico type-safe.

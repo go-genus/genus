@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GabrielOnRails/genus/core"
+	"github.com/go-genus/genus/core"
 )
 
 // AggregateFunc representa uma função de agregação SQL.
