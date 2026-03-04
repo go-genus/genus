@@ -269,16 +269,6 @@ users, _ := genus.Table[User](db).
 
 ---
 
-## Production Usage
-
-Genus is used in production systems handling:
-
-- **Financial services** — 25M+ transactions/month, PCI DSS compliant
-- **Healthcare** — 30M+ patient records, HIPAA/LGPD compliant
-- **SaaS platforms** — 50M+ events/day, SOC 2 compliant
-
----
-
 ## Contributing
 
 ```bash
