@@ -44,11 +44,11 @@ func DefaultSubscriptionConfig() SubscriptionConfig {
 
 // Subscription representa uma subscription ativa.
 type Subscription struct {
-	channel  string
-	handler  NotifyHandler
-	cancel   context.CancelFunc
-	active   bool
-	mu       sync.Mutex
+	channel string
+	handler NotifyHandler
+	cancel  context.CancelFunc
+	active  bool
+	mu      sync.Mutex
 }
 
 // Cancel cancela a subscription.

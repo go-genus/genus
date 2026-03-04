@@ -11,8 +11,8 @@ import (
 type TypeMetadata struct {
 	Type       reflect.Type
 	TableName  string
-	Columns    []string          // Column names in order
-	FieldIndex map[string][]int  // Column name -> struct field index path
+	Columns    []string         // Column names in order
+	FieldIndex map[string][]int // Column name -> struct field index path
 	HasID      bool
 	IDIndex    []int // Index path to ID field
 	HasCreated bool

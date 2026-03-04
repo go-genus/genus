@@ -9,16 +9,16 @@ import (
 
 // QueryStats representa estatísticas de uma query.
 type QueryStats struct {
-	SQL           string
-	Duration      time.Duration
-	Timestamp     time.Time
-	RowsAffected  int64
-	RowsReturned  int64
-	Args          []interface{}
-	Error         error
-	IsSlow        bool
-	CallerFile    string
-	CallerLine    int
+	SQL          string
+	Duration     time.Duration
+	Timestamp    time.Time
+	RowsAffected int64
+	RowsReturned int64
+	Args         []interface{}
+	Error        error
+	IsSlow       bool
+	CallerFile   string
+	CallerLine   int
 }
 
 // ProfilerConfig configura o profiler de queries.

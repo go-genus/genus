@@ -64,12 +64,12 @@ func DefaultCircuitBreakerConfig() CircuitBreakerConfig {
 
 // CircuitBreaker implementa o padrão circuit breaker para conexões de banco.
 type CircuitBreaker struct {
-	config           CircuitBreakerConfig
-	state            CircuitState
-	failures         int
-	successes        int
-	lastFailureTime  time.Time
-	mu               sync.RWMutex
+	config          CircuitBreakerConfig
+	state           CircuitState
+	failures        int
+	successes       int
+	lastFailureTime time.Time
+	mu              sync.RWMutex
 }
 
 // NewCircuitBreaker cria um novo circuit breaker.

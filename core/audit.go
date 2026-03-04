@@ -19,17 +19,17 @@ const (
 
 // AuditEntry representa uma entrada de auditoria.
 type AuditEntry struct {
-	ID          int64                  `json:"id" db:"id"`
-	TableName   string                 `json:"table_name" db:"table_name"`
-	RecordID    interface{}            `json:"record_id" db:"record_id"`
-	Action      AuditAction            `json:"action" db:"action"`
-	OldValues   map[string]interface{} `json:"old_values,omitempty" db:"old_values"`
-	NewValues   map[string]interface{} `json:"new_values,omitempty" db:"new_values"`
-	ChangedBy   string                 `json:"changed_by,omitempty" db:"changed_by"`
-	ChangedAt   time.Time              `json:"changed_at" db:"changed_at"`
-	IPAddress   string                 `json:"ip_address,omitempty" db:"ip_address"`
-	UserAgent   string                 `json:"user_agent,omitempty" db:"user_agent"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
+	ID        int64                  `json:"id" db:"id"`
+	TableName string                 `json:"table_name" db:"table_name"`
+	RecordID  interface{}            `json:"record_id" db:"record_id"`
+	Action    AuditAction            `json:"action" db:"action"`
+	OldValues map[string]interface{} `json:"old_values,omitempty" db:"old_values"`
+	NewValues map[string]interface{} `json:"new_values,omitempty" db:"new_values"`
+	ChangedBy string                 `json:"changed_by,omitempty" db:"changed_by"`
+	ChangedAt time.Time              `json:"changed_at" db:"changed_at"`
+	IPAddress string                 `json:"ip_address,omitempty" db:"ip_address"`
+	UserAgent string                 `json:"user_agent,omitempty" db:"user_agent"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty" db:"metadata"`
 }
 
 // AuditConfig configura o sistema de auditoria.
