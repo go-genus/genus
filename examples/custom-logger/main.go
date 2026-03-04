@@ -39,12 +39,12 @@ type JSONLogger struct{}
 
 func (l *JSONLogger) LogQuery(query string, args []interface{}, duration int64) {
 	logEntry := map[string]interface{}{
-		"timestamp": time.Now().Format(time.RFC3339),
-		"level":     "INFO",
-		"type":      "query",
-		"sql":       query,
-		"args":      args,
-		"duration":  duration,
+		"timestamp":   time.Now().Format(time.RFC3339),
+		"level":       "INFO",
+		"type":        "query",
+		"sql":         query,
+		"args":        args,
+		"duration":    duration,
 		"duration_ms": float64(duration) / 1000000.0,
 	}
 

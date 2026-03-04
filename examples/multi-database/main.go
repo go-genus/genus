@@ -21,10 +21,10 @@ import (
 // User é a struct de exemplo para todos os bancos de dados.
 type User struct {
 	core.Model
-	Name     string                 `db:"name"`
-	Email    core.Optional[string]  `db:"email"`
-	Age      core.Optional[int]     `db:"age"`
-	IsActive bool                   `db:"is_active"`
+	Name     string                `db:"name"`
+	Email    core.Optional[string] `db:"email"`
+	Age      core.Optional[int]    `db:"age"`
+	IsActive bool                  `db:"is_active"`
 }
 
 // UserFields - campos tipados (pode ser gerado com genus generate)

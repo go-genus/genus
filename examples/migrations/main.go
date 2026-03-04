@@ -18,19 +18,19 @@ import (
 // User model
 type User struct {
 	core.Model
-	Name     string                 `db:"name"`
-	Email    core.Optional[string]  `db:"email"`
-	Username string                 `db:"username"`
-	IsActive bool                   `db:"is_active"`
+	Name     string                `db:"name"`
+	Email    core.Optional[string] `db:"email"`
+	Username string                `db:"username"`
+	IsActive bool                  `db:"is_active"`
 }
 
 // Product model
 type Product struct {
 	core.Model
-	Name        string                 `db:"name"`
-	Description core.Optional[string]  `db:"description"`
-	Price       float64                `db:"price"`
-	Stock       int                    `db:"stock"`
+	Name        string                `db:"name"`
+	Description core.Optional[string] `db:"description"`
+	Price       float64               `db:"price"`
+	Stock       int                   `db:"stock"`
 }
 
 // UserFields

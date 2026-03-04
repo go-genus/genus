@@ -13,7 +13,7 @@ type DefaultLogger struct {
 }
 
 // NewDefaultLogger cria um novo DefaultLogger.
-// Se verbose for true, exibe os argumentos da query também.
+// Se verbose for true, exibe os arguments da query também.
 func NewDefaultLogger(verbose bool) *DefaultLogger {
 	return &DefaultLogger{verbose: verbose}
 }

@@ -130,10 +130,10 @@ func (m *MockExecutor) QueryRowContext(ctx context.Context, query string, args .
 
 // TestUserRepository_Create é um exemplo de teste
 func TestUserRepository_Create(t *testing.T) {
-	// Este é um exemplo conceitual
+	// Este é um exemplo conceptual
 	// Em testes reais, você configuraria um banco de teste real
 
-	t.Skip("Exemplo conceitual - requer banco de dados de teste configurado")
+	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -160,7 +160,7 @@ func TestUserRepository_Create(t *testing.T) {
 
 // TestUserRepository_FindByEmail é um exemplo de teste de query
 func TestUserRepository_FindByEmail(t *testing.T) {
-	t.Skip("Exemplo conceitual - requer banco de dados de teste configurado")
+	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -196,7 +196,7 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 
 // TestUserRepository_FindActive testa busca de usuários ativos
 func TestUserRepository_FindActive(t *testing.T) {
-	t.Skip("Exemplo conceitual - requer banco de dados de teste configurado")
+	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -236,7 +236,7 @@ func TestUserRepository_FindActive(t *testing.T) {
 
 // TestUserRepository_Transaction testa operações em transação
 func TestUserRepository_Transaction(t *testing.T) {
-	t.Skip("Exemplo conceitual - requer banco de dados de teste configurado")
+	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -300,7 +300,7 @@ func TestUserRepository_Transaction(t *testing.T) {
 
 // BenchmarkUserRepository_FindActive benchmark para queries
 func BenchmarkUserRepository_FindActive(b *testing.B) {
-	b.Skip("Exemplo conceitual - requer banco de dados de teste configurado")
+	b.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()

@@ -18,14 +18,14 @@ import (
 // Product demonstra o uso de Optional[T] para campos nullable.
 type Product struct {
 	core.Model
-	Name        string                  `db:"name"`
-	Description core.Optional[string]   `db:"description"` // Pode ser NULL
-	Price       float64                 `db:"price"`
-	Discount    core.Optional[float64]  `db:"discount"`    // Pode ser NULL
-	Stock       int                     `db:"stock"`
-	MinStock    core.Optional[int]      `db:"min_stock"`   // Pode ser NULL
-	Active      bool                    `db:"active"`
-	Featured    core.Optional[bool]     `db:"featured"`    // Pode ser NULL
+	Name        string                 `db:"name"`
+	Description core.Optional[string]  `db:"description"` // Pode ser NULL
+	Price       float64                `db:"price"`
+	Discount    core.Optional[float64] `db:"discount"` // Pode ser NULL
+	Stock       int                    `db:"stock"`
+	MinStock    core.Optional[int]     `db:"min_stock"` // Pode ser NULL
+	Active      bool                   `db:"active"`
+	Featured    core.Optional[bool]    `db:"featured"` // Pode ser NULL
 }
 
 // ProductFields - campos tipados (normalmente gerados por genus generate)

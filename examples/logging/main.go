@@ -62,8 +62,8 @@ func main() {
 		fmt.Printf("\n   Retornou %d usuários\n", len(users))
 	}
 
-	// --- Exemplo 2: Logging Verbose (mostra argumentos) ---
-	fmt.Println("\n\n2. Logging Verbose (mostra SQL, argumentos e tempo):")
+	// --- Exemplo 2: Logging Verbose (mostra arguments) ---
+	fmt.Println("\n\n2. Logging Verbose (mostra SQL, arguments e tempo):")
 
 	// Cria uma nova conexão com logger verbose
 	sqlDB, _ := sql.Open("postgres", "host=localhost user=postgres password=postgres dbname=testdb sslmode=disable")

@@ -169,7 +169,7 @@ func (o *Optional[T]) Scan(value any) error {
 		return scanner.Scan(value)
 	}
 
-	// Conversões comuns para tipos primitivos
+	// Common conversions for primitive types
 	switch any(&o.value).(type) {
 	case *string:
 		str, err := convertToString(value)
@@ -251,7 +251,7 @@ func (o *Optional[T]) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &o.value)
 }
 
-// --- Funções auxiliares de conversão ---
+// --- Helper conversion functions ---
 
 func convertToString(value any) (string, error) {
 	switch v := value.(type) {
