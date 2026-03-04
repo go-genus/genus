@@ -54,7 +54,7 @@ func main() {
 
 	ctx := context.Background()
 
-	// Conectar ao banco de dados
+	// Connect to database
 	dsn := "postgres://postgres:postgres@localhost:5432/genus_migrations?sslmode=disable"
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -74,7 +74,7 @@ func main() {
 	dialect := postgres.New()
 	logger := core.NewDefaultLogger(true)
 
-	// Demonstração 1: AutoMigrate (desenvolvimento rápido)
+	// Demo 1: AutoMigrate (quick development)
 	fmt.Println("1. AutoMigrate (Development)")
 	fmt.Println("   Creating tables from structs...")
 
@@ -85,7 +85,7 @@ func main() {
 	fmt.Println("   ✅ Tables created successfully!")
 	fmt.Println()
 
-	// Testar inserção
+	// Test insertion
 	g := genus.NewWithLogger(db, dialect, logger)
 
 	user := &User{
@@ -101,7 +101,7 @@ func main() {
 
 	fmt.Printf("   Created user with ID: %d\n\n", user.ID)
 
-	// Demonstração 2: Manual Migrations (produção)
+	// Demo 2: Manual Migrations (production)
 	fmt.Println("2. Manual Migrations (Production)")
 	fmt.Println("   Setting up migrator...")
 
@@ -109,7 +109,7 @@ func main() {
 		TableName: "schema_migrations",
 	})
 
-	// Registrar migrations
+	// Register migrations
 	migrations := []migrate.Migration{
 		{
 			Version: 1,
@@ -189,7 +189,7 @@ func main() {
 
 	migrator.RegisterMultiple(migrations)
 
-	// Mostrar status antes
+	// Show status before
 	fmt.Println("\n   Migration Status (before):")
 	statuses, err := migrator.Status(ctx)
 	if err != nil {
@@ -197,13 +197,13 @@ func main() {
 	}
 	printStatus(statuses)
 
-	// Aplicar migrations
+	// Apply migrations
 	fmt.Println("\n   Applying migrations...")
 	if err := migrator.Up(ctx); err != nil {
 		log.Fatalf("Failed to apply migrations: %v", err)
 	}
 
-	// Mostrar status depois
+	// Show status after
 	fmt.Println("\n   Migration Status (after):")
 	statuses, err = migrator.Status(ctx)
 	if err != nil {
@@ -211,7 +211,7 @@ func main() {
 	}
 	printStatus(statuses)
 
-	// Demonstração 3: Rollback
+	// Demo 3: Rollback
 	fmt.Println("\n3. Rollback Demo")
 	fmt.Println("   Reverting last migration...")
 
@@ -226,17 +226,17 @@ func main() {
 	}
 	printStatus(statuses)
 
-	// Reaplica a migration para deixar o banco consistente
+	// Re-apply migration to keep database consistent
 	fmt.Println("\n   Re-applying migration...")
 	if err := migrator.Up(ctx); err != nil {
 		log.Fatalf("Failed to re-apply migration: %v", err)
 	}
 
-	// Demonstração 4: CreateTableMigration helper
+	// Demo 4: CreateTableMigration helper
 	fmt.Println("\n4. CreateTableMigration Helper")
 	fmt.Println("   Creating migration from struct...")
 
-	// Este helper facilita criar migrations a partir de structs
+	// This helper makes it easy to create migrations from structs
 	migrator2 := migrate.New(db, dialect, logger, migrate.Config{
 		TableName: "schema_migrations_2",
 	})
@@ -273,7 +273,8 @@ func printStatus(statuses []migrate.MigrationStatus) {
 	for _, status := range statuses {
 		symbol := "[ ]"
 		if status.Applied {
-			symbol = "[✓]"
+			symbol := "[✓]"
+			_ = symbol
 		}
 
 		fmt.Printf("   %s %d: %s\n", symbol, status.Version, status.Name)

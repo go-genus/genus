@@ -14,7 +14,7 @@ import (
 	"github.com/go-genus/genus/query"
 )
 
-// User modelo de exemplo.
+// User example model.
 type User struct {
 	core.Model
 	Name  string `db:"name"`
@@ -33,7 +33,7 @@ var UserFields = struct {
 }
 
 // --- Custom Logger 1: JSON Logger ---
-// Útil para enviar logs estruturados para sistemas de logging externos.
+// Useful for sending structured logs to external logging systems.
 
 type JSONLogger struct{}
 
@@ -67,16 +67,16 @@ func (l *JSONLogger) LogError(query string, args []interface{}, err error) {
 }
 
 // --- Custom Logger 2: File Logger ---
-// Grava logs em arquivo.
+// Writes logs to file.
 
 type FileLogger struct {
 	file *log.Logger
 }
 
 func NewFileLogger(filename string) (*FileLogger, error) {
-	// Em produção, você abriria um arquivo real
+	// In production, you would open a real file
 	// file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	// Para este exemplo, usamos stdout
+	// For this example, we use stdout
 
 	return &FileLogger{
 		file: log.New(log.Writer(), "[SQL] ", log.LstdFlags),
@@ -84,7 +84,7 @@ func NewFileLogger(filename string) (*FileLogger, error) {
 }
 
 func (l *FileLogger) LogQuery(query string, args []interface{}, duration int64) {
-	l.file.Printf("SUCCESS | %dµs | %s | args=%v", duration/1000, query, args)
+	l.file.Printf("SUCCESS | %dus | %s | args=%v", duration/1000, query, args)
 }
 
 func (l *FileLogger) LogError(query string, args []interface{}, err error) {
@@ -92,7 +92,7 @@ func (l *FileLogger) LogError(query string, args []interface{}, err error) {
 }
 
 // --- Custom Logger 3: Metrics Logger ---
-// Coleta métricas de performance.
+// Collects performance metrics.
 
 type MetricsLogger struct {
 	totalQueries int64
@@ -104,7 +104,7 @@ func (l *MetricsLogger) LogQuery(query string, args []interface{}, duration int6
 	l.totalQueries++
 	l.totalTime += duration
 
-	// Em produção, você enviaria para Prometheus, StatsD, etc
+	// In production, you would send to Prometheus, StatsD, etc
 	avgTime := float64(l.totalTime) / float64(l.totalQueries) / 1000000.0
 	log.Printf("[METRICS] Query #%d executed in %.2fms (avg: %.2fms)",
 		l.totalQueries, float64(duration)/1000000.0, avgTime)
@@ -128,7 +128,7 @@ func (l *MetricsLogger) PrintStats() {
 }
 
 // --- Custom Logger 4: Conditional Logger ---
-// Loga apenas queries lentas.
+// Logs only slow queries.
 
 type SlowQueryLogger struct {
 	thresholdMs float64
@@ -151,7 +151,7 @@ func (l *SlowQueryLogger) LogError(query string, args []interface{}, err error) 
 }
 
 // --- Custom Logger 5: Composite Logger ---
-// Combina múltiplos loggers em um só.
+// Combines multiple loggers into one.
 
 type CompositeLogger struct {
 	loggers []core.Logger
@@ -175,7 +175,7 @@ func main() {
 	fmt.Println("=== Genus ORM - Custom Logger Demo ===")
 	fmt.Println()
 
-	// Conecta ao banco
+	// Connect to database
 	sqlDB, err := sql.Open("postgres", "host=localhost user=postgres password=postgres dbname=testdb sslmode=disable")
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
@@ -204,12 +204,12 @@ func main() {
 	metricsLogger := &MetricsLogger{}
 	metricsDB := genus.NewWithLogger(sqlDB, postgres.New(), metricsLogger)
 
-	// Executa várias queries
+	// Execute multiple queries
 	genus.Table[User](metricsDB).Where(UserFields.Age.Gt(20)).Find(ctx)
 	genus.Table[User](metricsDB).Where(UserFields.Age.Lt(50)).Count(ctx)
 	genus.Table[User](metricsDB).Where(UserFields.Email.Like("%example%")).Find(ctx)
 
-	// Mostra estatísticas
+	// Show statistics
 	metricsLogger.PrintStats()
 
 	// --- Demo 4: Slow Query Logger ---
@@ -221,7 +221,7 @@ func main() {
 		Where(UserFields.Age.Between(20, 40)).
 		Find(ctx)
 
-	// Forçar query mais lenta com JOIN ou agregação complexa
+	// Force slower query with COUNT
 	genus.Table[User](slowDB).Count(ctx)
 
 	// --- Demo 5: Combining Loggers (Composite Pattern) ---
@@ -240,11 +240,11 @@ func main() {
 		Where(UserFields.Age.Gt(25)).
 		Find(ctx)
 
-	fmt.Println("\n=== Resumo ===")
-	fmt.Println("✓ JSONLogger - Logs estruturados para sistemas externos")
-	fmt.Println("✓ FileLogger - Grava logs em arquivo")
-	fmt.Println("✓ MetricsLogger - Coleta estatísticas de performance")
-	fmt.Println("✓ SlowQueryLogger - Alerta sobre queries lentas")
-	fmt.Println("✓ CompositeLogger - Combina múltiplos loggers")
-	fmt.Println("\nImplemente core.Logger para criar seu próprio logger!")
+	fmt.Println("\n=== Summary ===")
+	fmt.Println("✓ JSONLogger - Structured logs for external systems")
+	fmt.Println("✓ FileLogger - Writes logs to file")
+	fmt.Println("✓ MetricsLogger - Collects performance statistics")
+	fmt.Println("✓ SlowQueryLogger - Alerts on slow queries")
+	fmt.Println("✓ CompositeLogger - Combines multiple loggers")
+	fmt.Println("\nImplement core.Logger to create your own logger!")
 }

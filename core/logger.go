@@ -7,18 +7,18 @@ import (
 	"time"
 )
 
-// DefaultLogger é a implementação padrão do Logger que escreve para stdout.
+// DefaultLogger is the default Logger implementation that writes to stdout.
 type DefaultLogger struct {
 	verbose bool
 }
 
-// NewDefaultLogger cria um novo DefaultLogger.
-// Se verbose for true, exibe os arguments da query também.
+// NewDefaultLogger creates a new DefaultLogger.
+// If verbose is true, it also displays query arguments.
 func NewDefaultLogger(verbose bool) *DefaultLogger {
 	return &DefaultLogger{verbose: verbose}
 }
 
-// LogQuery registra uma query SQL executada com sucesso.
+// LogQuery logs a successfully executed SQL query.
 func (l *DefaultLogger) LogQuery(query string, args []interface{}, duration int64) {
 	cleanQuery := cleanSQL(query)
 
@@ -29,7 +29,7 @@ func (l *DefaultLogger) LogQuery(query string, args []interface{}, duration int6
 	}
 }
 
-// LogError registra um erro durante a execução de uma query.
+// LogError logs an error during query execution.
 func (l *DefaultLogger) LogError(query string, args []interface{}, err error) {
 	cleanQuery := cleanSQL(query)
 
@@ -40,25 +40,25 @@ func (l *DefaultLogger) LogError(query string, args []interface{}, err error) {
 	}
 }
 
-// NoOpLogger é um logger que não faz nada.
-// Útil para testes ou quando você não quer logging.
+// NoOpLogger is a logger that does nothing.
+// Useful for tests or when you don't want logging.
 type NoOpLogger struct{}
 
-// LogQuery não faz nada.
+// LogQuery does nothing.
 func (n *NoOpLogger) LogQuery(query string, args []interface{}, duration int64) {}
 
-// LogError não faz nada.
+// LogError does nothing.
 func (n *NoOpLogger) LogError(query string, args []interface{}, err error) {}
 
-// Funções auxiliares
+// Helper functions
 
-// cleanSQL remove espaços em branco extras e quebras de linha.
+// cleanSQL removes extra whitespace and line breaks.
 func cleanSQL(query string) string {
-	// Remove quebras de linha e tabs
+	// Remove line breaks and tabs
 	clean := strings.ReplaceAll(query, "\n", " ")
 	clean = strings.ReplaceAll(clean, "\t", " ")
 
-	// Remove múltiplos espaços
+	// Remove multiple spaces
 	for strings.Contains(clean, "  ") {
 		clean = strings.ReplaceAll(clean, "  ", " ")
 	}
@@ -66,7 +66,7 @@ func cleanSQL(query string) string {
 	return strings.TrimSpace(clean)
 }
 
-// formatDuration formata a duração em um formato legível.
+// formatDuration formats the duration in a human-readable format.
 func formatDuration(nanos int64) string {
 	d := time.Duration(nanos)
 

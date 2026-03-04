@@ -18,7 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// User é a struct de exemplo para todos os bancos de dados.
+// User is the example struct for all databases.
 type User struct {
 	core.Model
 	Name     string                `db:"name"`
@@ -27,7 +27,7 @@ type User struct {
 	IsActive bool                  `db:"is_active"`
 }
 
-// UserFields - campos tipados (pode ser gerado com genus generate)
+// UserFields - typed fields (can be generated with genus generate)
 var UserFields = struct {
 	ID        query.Int64Field
 	Name      query.StringField
@@ -84,7 +84,7 @@ func main() {
 }
 
 func runPostgreSQL(ctx context.Context) error {
-	// Conectar ao PostgreSQL
+	// Connect to PostgreSQL
 	dsn := "user=postgres password=postgres dbname=genus_test sslmode=disable"
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -96,18 +96,18 @@ func runPostgreSQL(ctx context.Context) error {
 		return err
 	}
 
-	// Criar Genus com dialect PostgreSQL
+	// Create Genus with PostgreSQL dialect
 	g := genus.NewWithLogger(db, postgres.New(), core.NewDefaultLogger(true))
 
-	// Criar tabela
+	// Create table
 	createTablePostgreSQL(db)
 
-	// Testar CRUD
+	// Test CRUD
 	return testCRUD(ctx, g, "PostgreSQL")
 }
 
 func runMySQL(ctx context.Context) error {
-	// Conectar ao MySQL
+	// Connect to MySQL
 	dsn := "root:password@tcp(localhost:3306)/genus_test?parseTime=true"
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -119,31 +119,31 @@ func runMySQL(ctx context.Context) error {
 		return err
 	}
 
-	// Criar Genus com dialect MySQL
+	// Create Genus with MySQL dialect
 	g := genus.NewWithLogger(db, mysql.New(), core.NewDefaultLogger(true))
 
-	// Criar tabela
+	// Create table
 	createTableMySQL(db)
 
-	// Testar CRUD
+	// Test CRUD
 	return testCRUD(ctx, g, "MySQL")
 }
 
 func runSQLite(ctx context.Context) error {
-	// Conectar ao SQLite (arquivo temporário)
+	// Connect to SQLite (in-memory)
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	// Criar Genus com dialect SQLite
+	// Create Genus with SQLite dialect
 	g := genus.NewWithLogger(db, sqlite.New(), core.NewDefaultLogger(true))
 
-	// Criar tabela
+	// Create table
 	createTableSQLite(db)
 
-	// Testar CRUD
+	// Test CRUD
 	return testCRUD(ctx, g, "SQLite")
 }
 

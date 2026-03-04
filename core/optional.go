@@ -7,38 +7,38 @@ import (
 	"fmt"
 )
 
-// Optional representa um valor que pode ou não estar presente.
-// Resolve o problema da manipulação de sql.Null* e ponteiros em JSON
-// com uma API limpa e unificada.
+// Optional represents a value that may or may not be present.
+// It solves the problem of handling sql.Null* and pointers in JSON
+// with a clean and unified API.
 //
-// Exemplo de uso:
+// Usage example:
 //
 //	type User struct {
 //	    core.Model
 //	    Name  string
-//	    Email Optional[string] // pode ser NULL no banco
-//	    Age   Optional[int]    // pode ser NULL no banco
+//	    Email Optional[string] // can be NULL in database
+//	    Age   Optional[int]    // can be NULL in database
 //	}
 //
-//	// Criar um valor presente
+//	// Create a present value
 //	email := Some("user@example.com")
 //
-//	// Criar um valor ausente
+//	// Create an absent value
 //	age := None[int]()
 //
-//	// Verificar se tem valor
+//	// Check if it has a value
 //	if email.IsPresent() {
 //	    fmt.Println(email.Get()) // user@example.com
 //	}
 //
-//	// Obter com valor padrão
-//	value := age.GetOrDefault(18) // retorna 18
+//	// Get with default value
+//	value := age.GetOrDefault(18) // returns 18
 type Optional[T any] struct {
 	value T
 	valid bool
 }
 
-// Some cria um Optional com um valor presente.
+// Some creates an Optional with a present value.
 func Some[T any](value T) Optional[T] {
 	return Optional[T]{
 		value: value,
@@ -46,15 +46,15 @@ func Some[T any](value T) Optional[T] {
 	}
 }
 
-// None cria um Optional sem valor (NULL).
+// None creates an Optional without a value (NULL).
 func None[T any]() Optional[T] {
 	return Optional[T]{
 		valid: false,
 	}
 }
 
-// FromPtr cria um Optional a partir de um ponteiro.
-// Se o ponteiro for nil, retorna None. Caso contrário, retorna Some com o valor.
+// FromPtr creates an Optional from a pointer.
+// If the pointer is nil, returns None. Otherwise, returns Some with the value.
 func FromPtr[T any](ptr *T) Optional[T] {
 	if ptr == nil {
 		return None[T]()
@@ -62,27 +62,27 @@ func FromPtr[T any](ptr *T) Optional[T] {
 	return Some(*ptr)
 }
 
-// IsPresent retorna true se o Optional contém um valor.
+// IsPresent returns true if the Optional contains a value.
 func (o Optional[T]) IsPresent() bool {
 	return o.valid
 }
 
-// IsAbsent retorna true se o Optional não contém um valor.
+// IsAbsent returns true if the Optional does not contain a value.
 func (o Optional[T]) IsAbsent() bool {
 	return !o.valid
 }
 
-// Get retorna o valor contido no Optional.
-// Entra em pânico se o Optional não contiver um valor.
-// Use IsPresent() para verificar antes de chamar Get().
+// Get returns the value contained in the Optional.
+// Panics if the Optional does not contain a value.
+// Use IsPresent() to check before calling Get().
 func (o Optional[T]) Get() T {
 	if !o.valid {
-		panic("Optional.Get() chamado em um Optional vazio")
+		panic("Optional.Get() called on an empty Optional")
 	}
 	return o.value
 }
 
-// GetOrDefault retorna o valor se presente, ou o valor padrão fornecido.
+// GetOrDefault returns the value if present, or the provided default value.
 func (o Optional[T]) GetOrDefault(defaultValue T) T {
 	if o.valid {
 		return o.value
@@ -90,12 +90,12 @@ func (o Optional[T]) GetOrDefault(defaultValue T) T {
 	return defaultValue
 }
 
-// GetOrZero retorna o valor se presente, ou o valor zero do tipo.
+// GetOrZero returns the value if present, or the zero value of the type.
 func (o Optional[T]) GetOrZero() T {
 	return o.value
 }
 
-// Ptr retorna um ponteiro para o valor se presente, ou nil.
+// Ptr returns a pointer to the value if present, or nil.
 func (o Optional[T]) Ptr() *T {
 	if !o.valid {
 		return nil
@@ -103,8 +103,8 @@ func (o Optional[T]) Ptr() *T {
 	return &o.value
 }
 
-// Map aplica uma função ao valor se presente, retornando um novo Optional.
-// Se o Optional estiver vazio, retorna um Optional vazio do novo tipo.
+// Map applies a function to the value if present, returning a new Optional.
+// If the Optional is empty, returns an empty Optional of the new type.
 func Map[T any, U any](o Optional[T], fn func(T) U) Optional[U] {
 	if !o.valid {
 		return None[U]()
@@ -112,8 +112,8 @@ func Map[T any, U any](o Optional[T], fn func(T) U) Optional[U] {
 	return Some(fn(o.value))
 }
 
-// FlatMap aplica uma função que retorna um Optional ao valor se presente.
-// Se o Optional estiver vazio, retorna um Optional vazio do novo tipo.
+// FlatMap applies a function that returns an Optional to the value if present.
+// If the Optional is empty, returns an empty Optional of the new type.
 func FlatMap[T any, U any](o Optional[T], fn func(T) Optional[U]) Optional[U] {
 	if !o.valid {
 		return None[U]()
@@ -121,7 +121,7 @@ func FlatMap[T any, U any](o Optional[T], fn func(T) Optional[U]) Optional[U] {
 	return fn(o.value)
 }
 
-// Filter retorna o Optional se o predicado for verdadeiro, ou None caso contrário.
+// Filter returns the Optional if the predicate is true, or None otherwise.
 func (o Optional[T]) Filter(predicate func(T) bool) Optional[T] {
 	if !o.valid || !predicate(o.value) {
 		return None[T]()
@@ -129,15 +129,15 @@ func (o Optional[T]) Filter(predicate func(T) bool) Optional[T] {
 	return o
 }
 
-// IfPresent executa uma função se o Optional contiver um valor.
+// IfPresent executes a function if the Optional contains a value.
 func (o Optional[T]) IfPresent(fn func(T)) {
 	if o.valid {
 		fn(o.value)
 	}
 }
 
-// IfPresentOrElse executa fnPresent se o Optional contiver um valor,
-// ou fnAbsent caso contrário.
+// IfPresentOrElse executes fnPresent if the Optional contains a value,
+// or fnAbsent otherwise.
 func (o Optional[T]) IfPresentOrElse(fnPresent func(T), fnAbsent func()) {
 	if o.valid {
 		fnPresent(o.value)
@@ -146,9 +146,9 @@ func (o Optional[T]) IfPresentOrElse(fnPresent func(T), fnAbsent func()) {
 	}
 }
 
-// --- Suporte a database/sql ---
+// --- database/sql support ---
 
-// Scan implementa sql.Scanner para permitir scan direto do banco de dados.
+// Scan implements sql.Scanner to allow direct scan from database.
 func (o *Optional[T]) Scan(value any) error {
 	if value == nil {
 		o.valid = false
@@ -157,19 +157,19 @@ func (o *Optional[T]) Scan(value any) error {
 
 	o.valid = true
 
-	// Tenta converter o valor para o tipo T
+	// Try to convert value to type T
 	switch v := value.(type) {
 	case T:
 		o.value = v
 		return nil
 	}
 
-	// Fallback: tenta usar sql.Scanner se T implementar
+	// Fallback: try to use sql.Scanner if T implements it
 	if scanner, ok := any(&o.value).(sql.Scanner); ok {
 		return scanner.Scan(value)
 	}
 
-	// Common conversions for primitive types
+	// Common type conversions for primitive types
 	switch any(&o.value).(type) {
 	case *string:
 		str, err := convertToString(value)
@@ -208,29 +208,29 @@ func (o *Optional[T]) Scan(value any) error {
 		return nil
 	}
 
-	return fmt.Errorf("não foi possível converter %T para %T", value, o.value)
+	return fmt.Errorf("could not convert %T to %T", value, o.value)
 }
 
-// Value implementa driver.Valuer para permitir inserção no banco de dados.
+// Value implements driver.Valuer to allow insertion into database.
 func (o Optional[T]) Value() (driver.Value, error) {
 	if !o.valid {
 		return nil, nil
 	}
 
-	// Se T implementa driver.Valuer, usa isso
+	// If T implements driver.Valuer, use that
 	if valuer, ok := any(o.value).(driver.Valuer); ok {
 		return valuer.Value()
 	}
 
-	// Retorna o valor diretamente para tipos primitivos
+	// Return value directly for primitive types
 	return any(o.value), nil
 }
 
-// --- Suporte a JSON ---
+// --- JSON support ---
 
-// MarshalJSON implementa json.Marshaler.
-// Se o Optional estiver vazio, serializa como null.
-// Caso contrário, serializa o valor contido.
+// MarshalJSON implements json.Marshaler.
+// If the Optional is empty, serializes as null.
+// Otherwise, serializes the contained value.
 func (o Optional[T]) MarshalJSON() ([]byte, error) {
 	if !o.valid {
 		return []byte("null"), nil
@@ -238,9 +238,9 @@ func (o Optional[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.value)
 }
 
-// UnmarshalJSON implementa json.Unmarshaler.
-// Se o JSON for null, define o Optional como vazio.
-// Caso contrário, desserializa para o valor contido.
+// UnmarshalJSON implements json.Unmarshaler.
+// If the JSON is null, sets the Optional as empty.
+// Otherwise, deserializes into the contained value.
 func (o *Optional[T]) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		o.valid = false
@@ -251,7 +251,7 @@ func (o *Optional[T]) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &o.value)
 }
 
-// --- Helper conversion functions ---
+// --- Helper type conversion functions ---
 
 func convertToString(value any) (string, error) {
 	switch v := value.(type) {
@@ -260,7 +260,7 @@ func convertToString(value any) (string, error) {
 	case []byte:
 		return string(v), nil
 	default:
-		return "", fmt.Errorf("não foi possível converter %T para string", value)
+		return "", fmt.Errorf("could not convert %T to string", value)
 	}
 }
 
@@ -277,7 +277,7 @@ func convertToInt(value any) (int, error) {
 		_, err := fmt.Sscanf(string(v), "%d", &i)
 		return int(i), err
 	default:
-		return 0, fmt.Errorf("não foi possível converter %T para int", value)
+		return 0, fmt.Errorf("could not convert %T to int", value)
 	}
 }
 
@@ -294,7 +294,7 @@ func convertToInt64(value any) (int64, error) {
 		_, err := fmt.Sscanf(string(v), "%d", &i)
 		return i, err
 	default:
-		return 0, fmt.Errorf("não foi possível converter %T para int64", value)
+		return 0, fmt.Errorf("could not convert %T to int64", value)
 	}
 }
 
@@ -309,7 +309,7 @@ func convertToBool(value any) (bool, error) {
 		_, err := fmt.Sscanf(string(v), "%t", &b)
 		return b, err
 	default:
-		return false, fmt.Errorf("não foi possível converter %T para bool", value)
+		return false, fmt.Errorf("could not convert %T to bool", value)
 	}
 }
 
@@ -324,6 +324,6 @@ func convertToFloat64(value any) (float64, error) {
 		_, err := fmt.Sscanf(string(v), "%f", &f)
 		return f, err
 	default:
-		return 0, fmt.Errorf("não foi possível converter %T para float64", value)
+		return 0, fmt.Errorf("could not convert %T to float64", value)
 	}
 }

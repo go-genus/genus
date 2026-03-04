@@ -10,22 +10,22 @@ import (
 	"github.com/go-genus/genus/query"
 )
 
-// User é o modelo de usuário com Model embedded.
+// User is the user model with embedded Model.
 type User struct {
-	core.Model        // Embedded: fornece ID, CreatedAt, UpdatedAt
+	core.Model        // Embedded: provides ID, CreatedAt, UpdatedAt
 	Name       string `db:"name"`
 	Email      string `db:"email"`
 	Age        int    `db:"age"`
 	IsActive   bool   `db:"is_active"`
 }
 
-// TableName implementa a interface TableNamer (opcional).
+// TableName implements the TableNamer interface (optional).
 func (u User) TableName() string {
 	return "users"
 }
 
-// UserFields define os campos tipados para queries type-safe.
-// Este é o "proxy" tipado que permite queries como User.Name.Eq("Alice").
+// UserFields defines typed fields for type-safe queries.
+// This is the typed "proxy" that allows queries like User.Name.Eq("Alice").
 var UserFields = struct {
 	ID       query.Int64Field
 	Name     query.StringField
@@ -43,7 +43,7 @@ var UserFields = struct {
 func main() {
 	ctx := context.Background()
 
-	// Conecta ao banco de dados
+	// Connect to the database
 	db, err := genus.Open("postgres", "host=localhost user=postgres password=postgres dbname=testdb sslmode=disable")
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
@@ -52,8 +52,8 @@ func main() {
 	fmt.Println("=== Genus ORM - Type-Safe Demo ===")
 	fmt.Println()
 
-	// --- Exemplo 1: Find com WHERE type-safe ---
-	fmt.Println("1. Buscar usuários com nome 'Alice':")
+	// --- Example 1: Find with type-safe WHERE ---
+	fmt.Println("1. Find users with name 'Alice':")
 
 	users, err := genus.Table[User](db).
 		Where(UserFields.Name.Eq("Alice")).
@@ -67,8 +67,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 2: Queries complexas com AND/OR ---
-	fmt.Println("\n2. Buscar usuários com idade > 25 E ativos:")
+	// --- Example 2: Complex queries with AND/OR ---
+	fmt.Println("\n2. Find users with age > 25 AND active:")
 
 	activeAdults, err := genus.Table[User](db).
 		Where(query.And(
@@ -86,8 +86,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 3: Query com LIKE ---
-	fmt.Println("\n3. Buscar usuários com email contendo 'example.com':")
+	// --- Example 3: Query with LIKE ---
+	fmt.Println("\n3. Find users with email containing 'example.com':")
 
 	emailUsers, err := genus.Table[User](db).
 		Where(UserFields.Email.Like("%example.com")).
@@ -101,8 +101,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 4: IN query ---
-	fmt.Println("\n4. Buscar usuários com idade em [20, 25, 30]:")
+	// --- Example 4: IN query ---
+	fmt.Println("\n4. Find users with age in [20, 25, 30]:")
 
 	ageUsers, err := genus.Table[User](db).
 		Where(UserFields.Age.In(20, 25, 30)).
@@ -116,8 +116,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 5: First (buscar apenas um) ---
-	fmt.Println("\n5. Buscar primeiro usuário com nome 'Bob':")
+	// --- Example 5: First (fetch only one) ---
+	fmt.Println("\n5. Find first user with name 'Bob':")
 
 	firstUser, err := genus.Table[User](db).
 		Where(UserFields.Name.Eq("Bob")).
@@ -129,8 +129,8 @@ func main() {
 		fmt.Printf("   Found: %s (%s) - Age: %d\n", firstUser.Name, firstUser.Email, firstUser.Age)
 	}
 
-	// --- Exemplo 6: Count ---
-	fmt.Println("\n6. Contar usuários ativos:")
+	// --- Example 6: Count ---
+	fmt.Println("\n6. Count active users:")
 
 	count, err := genus.Table[User](db).
 		Where(UserFields.IsActive.Eq(true)).
@@ -142,8 +142,8 @@ func main() {
 		fmt.Printf("   Total active users: %d\n", count)
 	}
 
-	// --- Exemplo 7: Between ---
-	fmt.Println("\n7. Buscar usuários com idade entre 20 e 30:")
+	// --- Example 7: Between ---
+	fmt.Println("\n7. Find users with age between 20 and 30:")
 
 	betweenUsers, err := genus.Table[User](db).
 		Where(UserFields.Age.Between(20, 30)).
@@ -157,8 +157,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 8: Limit e Offset ---
-	fmt.Println("\n8. Buscar 3 usuários (paginação):")
+	// --- Example 8: Limit and Offset ---
+	fmt.Println("\n8. Find 3 users (pagination):")
 
 	pagedUsers, err := genus.Table[User](db).
 		OrderByAsc("name").
@@ -174,8 +174,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 9: Create ---
-	fmt.Println("\n9. Criar novo usuário:")
+	// --- Example 9: Create ---
+	fmt.Println("\n9. Create new user:")
 
 	newUser := &User{
 		Name:     "Charlie",
@@ -191,8 +191,8 @@ func main() {
 		fmt.Printf("   Created user with ID: %d\n", newUser.ID)
 	}
 
-	// --- Exemplo 10: Update ---
-	fmt.Println("\n10. Atualizar usuário:")
+	// --- Example 10: Update ---
+	fmt.Println("\n10. Update user:")
 
 	if newUser.ID > 0 {
 		newUser.Age = 29
@@ -204,8 +204,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 11: Delete ---
-	fmt.Println("\n11. Deletar usuário:")
+	// --- Example 11: Delete ---
+	fmt.Println("\n11. Delete user:")
 
 	if newUser.ID > 0 {
 		err = db.DB().Delete(ctx, newUser)
@@ -216,8 +216,8 @@ func main() {
 		}
 	}
 
-	// --- Exemplo 12: Queries complexas com OR ---
-	fmt.Println("\n12. Buscar usuários com nome 'Alice' OU idade > 30:")
+	// --- Example 12: Complex queries with OR ---
+	fmt.Println("\n12. Find users with name 'Alice' OR age > 30:")
 
 	orUsers, err := genus.Table[User](db).
 		Where(query.Or(
@@ -234,13 +234,13 @@ func main() {
 		}
 	}
 
-	fmt.Println("\n=== Demo completo! ===")
-	fmt.Println("\n--- Características do Genus ---")
-	fmt.Println("✓ Type-safe queries usando Go Generics")
-	fmt.Println("✓ Retorna []T diretamente (não precisa de *[]T)")
-	fmt.Println("✓ Campos tipados (UserFields.Name.Eq, UserFields.Age.Gt, etc)")
-	fmt.Println("✓ Zero reflection em queries (apenas no scanning)")
-	fmt.Println("✓ Queries SQL transparentes e debugáveis")
-	fmt.Println("✓ Context-aware (todas funções recebem context.Context)")
-	fmt.Println("✓ Fluent API com method chaining")
+	fmt.Println("\n=== Demo complete! ===")
+	fmt.Println("\n--- Genus Features ---")
+	fmt.Println("✓ Type-safe queries using Go Generics")
+	fmt.Println("✓ Returns []T directly (no *[]T needed)")
+	fmt.Println("✓ Typed fields (UserFields.Name.Eq, UserFields.Age.Gt, etc)")
+	fmt.Println("✓ Zero reflection in queries (only in scanning)")
+	fmt.Println("✓ Transparent and debuggable SQL queries")
+	fmt.Println("✓ Context-aware (all functions receive context.Context)")
+	fmt.Println("✓ Fluent API with method chaining")
 }

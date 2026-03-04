@@ -7,7 +7,6 @@ import (
 	"database/sql"
 )
 
-
 // ============================================================================
 // User Scanners
 // ============================================================================
@@ -94,7 +93,6 @@ func UserColumnsString() string {
 	return "id, created_at, updated_at, name, email, age, is_active, score"
 }
 
-
 // ============================================================================
 // Post Scanners
 // ============================================================================
@@ -177,7 +175,6 @@ func PostColumnsString() string {
 	return "id, created_at, updated_at, title, content, user_id, views"
 }
 
-
 // ============================================================================
 // Comment Scanners
 // ============================================================================
@@ -255,5 +252,3 @@ func CommentColumns() []string {
 func CommentColumnsString() string {
 	return "id, created_at, updated_at, post_id, user_id, content"
 }
-
-

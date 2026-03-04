@@ -12,7 +12,7 @@ import (
 	"github.com/go-genus/genus/query"
 )
 
-// User é o modelo de usuário.
+// User is the user model.
 type User struct {
 	core.Model
 	Name     string `db:"name"`
@@ -41,16 +41,16 @@ func main() {
 	fmt.Println("=== Genus ORM - SQL Logging Demo ===")
 	fmt.Println()
 
-	// --- Exemplo 1: Logging Padrão (não-verbose) ---
-	fmt.Println("1. Logging Padrão (mostra SQL e tempo de execução):")
-	fmt.Println("   Conectando ao banco...")
+	// --- Example 1: Default Logging (non-verbose) ---
+	fmt.Println("1. Default Logging (shows SQL and execution time):")
+	fmt.Println("   Connecting to database...")
 
 	db, err := genus.Open("postgres", "host=localhost user=postgres password=postgres dbname=testdb sslmode=disable")
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
 
-	fmt.Println("\n   Executando query SELECT...")
+	fmt.Println("\n   Executing SELECT query...")
 	users, err := genus.Table[User](db).
 		Where(UserFields.Age.Gt(25)).
 		Limit(5).
@@ -59,17 +59,17 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("\n   Retornou %d usuários\n", len(users))
+		fmt.Printf("\n   Returned %d users\n", len(users))
 	}
 
-	// --- Exemplo 2: Logging Verbose (mostra arguments) ---
-	fmt.Println("\n\n2. Logging Verbose (mostra SQL, arguments e tempo):")
+	// --- Example 2: Verbose Logging (shows arguments) ---
+	fmt.Println("\n\n2. Verbose Logging (shows SQL, arguments and time):")
 
-	// Cria uma nova conexão com logger verbose
+	// Create a new connection with verbose logger
 	sqlDB, _ := sql.Open("postgres", "host=localhost user=postgres password=postgres dbname=testdb sslmode=disable")
 	verboseDB := genus.NewWithLogger(sqlDB, postgres.New(), core.NewDefaultLogger(true))
 
-	fmt.Println("\n   Executando query complexa...")
+	fmt.Println("\n   Executing complex query...")
 	complexUsers, err := genus.Table[User](verboseDB).
 		Where(query.And(
 			UserFields.Age.Between(20, 40),
@@ -82,13 +82,13 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("\n   Retornou %d usuários\n", len(complexUsers))
+		fmt.Printf("\n   Returned %d users\n", len(complexUsers))
 	}
 
-	// --- Exemplo 3: Logging de CRUD Operations ---
-	fmt.Println("\n\n3. Logging de operações CRUD:")
+	// --- Example 3: CRUD Operations Logging ---
+	fmt.Println("\n\n3. CRUD Operations Logging:")
 
-	fmt.Println("\n   Criando novo usuário...")
+	fmt.Println("\n   Creating new user...")
 	newUser := &User{
 		Name:     "Test User",
 		Email:    "test@example.com",
@@ -100,30 +100,30 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("\n   Usuário criado com ID: %d\n", newUser.ID)
+		fmt.Printf("\n   User created with ID: %d\n", newUser.ID)
 	}
 
 	if newUser.ID > 0 {
-		fmt.Println("\n   Atualizando usuário...")
+		fmt.Println("\n   Updating user...")
 		newUser.Age = 31
 		err = verboseDB.DB().Update(ctx, newUser)
 		if err != nil {
 			log.Printf("Error: %v\n", err)
 		}
 
-		fmt.Println("\n   Deletando usuário...")
+		fmt.Println("\n   Deleting user...")
 		err = verboseDB.DB().Delete(ctx, newUser)
 		if err != nil {
 			log.Printf("Error: %v\n", err)
 		}
 	}
 
-	// --- Exemplo 4: Logging de Erros ---
-	fmt.Println("\n\n4. Logging de erros SQL:")
+	// --- Example 4: Error Logging ---
+	fmt.Println("\n\n4. SQL Error Logging:")
 
-	fmt.Println("\n   Executando query inválida (tabela inexistente)...")
+	fmt.Println("\n   Executing invalid query (non-existent table)...")
 
-	// Forçar erro tentando consultar uma tabela que não existe
+	// Force error by querying a table that doesn't exist
 	type FakeModel struct {
 		core.Model
 		Name string `db:"name"`
@@ -131,23 +131,23 @@ func main() {
 
 	_, err = genus.Table[FakeModel](verboseDB).Find(ctx)
 	if err != nil {
-		fmt.Printf("\n   Erro capturado (veja o log acima)\n")
+		fmt.Printf("\n   Error captured (see log above)\n")
 	}
 
-	// --- Exemplo 5: Sem Logging (NoOpLogger) ---
-	fmt.Println("\n\n5. Sem logging (NoOpLogger):")
+	// --- Example 5: No Logging (NoOpLogger) ---
+	fmt.Println("\n\n5. No logging (NoOpLogger):")
 
 	silentDB := genus.NewWithLogger(sqlDB, postgres.New(), &core.NoOpLogger{})
 	genus.Table[User](silentDB).
 		Where(UserFields.Name.Eq("Alice")).
 		Find(ctx)
 
-	fmt.Println("   (Nenhum log SQL foi exibido)")
+	fmt.Println("   (No SQL log was displayed)")
 
-	// --- Exemplo 6: Count e Queries Agregadas ---
-	fmt.Println("\n\n6. Logging de queries agregadas:")
+	// --- Example 6: Count and Aggregate Queries ---
+	fmt.Println("\n\n6. Aggregate Query Logging:")
 
-	fmt.Println("\n   Contando usuários ativos...")
+	fmt.Println("\n   Counting active users...")
 	count, err := genus.Table[User](verboseDB).
 		Where(UserFields.IsActive.Eq(true)).
 		Count(ctx)
@@ -155,16 +155,16 @@ func main() {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 	} else {
-		fmt.Printf("\n   Total: %d usuários ativos\n", count)
+		fmt.Printf("\n   Total: %d active users\n", count)
 	}
 
-	fmt.Println("\n\n=== Resumo das Funcionalidades de Logging ===")
-	fmt.Println("✓ Logging automático de todas as queries SQL")
-	fmt.Println("✓ Medição de tempo de execução (nanosegundos a segundos)")
-	fmt.Println("✓ Modo verbose mostra parâmetros da query")
-	fmt.Println("✓ Logging de erros com query e parâmetros")
-	fmt.Println("✓ SQL formatado e limpo (sem quebras de linha)")
-	fmt.Println("✓ Logger customizável (implemente core.Logger)")
-	fmt.Println("✓ NoOpLogger para desabilitar logging")
-	fmt.Println("✓ Transparência SQL total para debugging")
+	fmt.Println("\n\n=== Logging Features Summary ===")
+	fmt.Println("✓ Automatic logging of all SQL queries")
+	fmt.Println("✓ Execution time measurement (nanoseconds to seconds)")
+	fmt.Println("✓ Verbose mode shows query parameters")
+	fmt.Println("✓ Error logging with query and parameters")
+	fmt.Println("✓ Clean formatted SQL (no line breaks)")
+	fmt.Println("✓ Customizable logger (implement core.Logger)")
+	fmt.Println("✓ NoOpLogger to disable logging")
+	fmt.Println("✓ Full SQL transparency for debugging")
 }

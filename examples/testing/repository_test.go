@@ -11,7 +11,7 @@ import (
 	"github.com/go-genus/genus/query"
 )
 
-// User model para testes
+// User model for tests
 type User struct {
 	core.Model
 	Name     string `db:"name"`
@@ -20,7 +20,7 @@ type User struct {
 	IsActive bool   `db:"is_active"`
 }
 
-// UserFields para queries type-safe
+// UserFields for type-safe queries
 var UserFields = struct {
 	ID       query.Int64Field
 	Name     query.StringField
@@ -35,7 +35,7 @@ var UserFields = struct {
 	IsActive: query.NewBoolField("is_active"),
 }
 
-// UserRepository encapsula operações de usuário
+// UserRepository encapsulates user operations
 type UserRepository struct {
 	db *genus.Genus
 }
@@ -78,33 +78,33 @@ func (r *UserRepository) Delete(ctx context.Context, user *User) error {
 	return r.db.DB().Delete(ctx, user)
 }
 
-// setupTestDB cria um banco de dados de teste em memória (SQLite)
-// Nota: Para usar SQLite, você precisaria implementar o dialeto SQLite
+// setupTestDB creates an in-memory test database (SQLite)
+// Note: To use SQLite, you would need to implement the SQLite dialect
 func setupTestDB() (*genus.Genus, func()) {
-	// Este é um exemplo. Em produção, você usaria um banco de teste real
-	// ou um mock do Executor interface
+	// This is an example. In production, you would use a real test database
+	// or a mock of the Executor interface
 
-	// Exemplo com PostgreSQL de teste:
+	// Example with test PostgreSQL:
 	// db, err := sql.Open("postgres", "postgresql://test:test@localhost/test_db")
 	// if err != nil {
 	//     log.Fatalf("Failed to open test database: %v", err)
 	// }
 
-	// Para este exemplo, vamos criar um stub
-	// Em testes reais, você usaria um banco de dados de teste
-	var sqlDB *sql.DB // Normalmente você criaria uma conexão real aqui
+	// For this example, we'll create a stub
+	// In real tests, you would use a test database
+	var sqlDB *sql.DB // Normally you would create a real connection here
 
 	genusDB := genus.New(sqlDB, postgres.New())
 
 	cleanup := func() {
-		// Cleanup do banco de teste
+		// Cleanup test database
 		// sqlDB.Close()
 	}
 
 	return genusDB, cleanup
 }
 
-// Exemplo de teste com mock
+// Mock executor example
 type MockExecutor struct {
 	createFunc func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 	queryFunc  func(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
@@ -128,12 +128,12 @@ func (m *MockExecutor) QueryRowContext(ctx context.Context, query string, args .
 	return nil
 }
 
-// TestUserRepository_Create é um exemplo de teste
+// TestUserRepository_Create is a test example
 func TestUserRepository_Create(t *testing.T) {
-	// Este é um exemplo conceptual
-	// Em testes reais, você configuraria um banco de teste real
+	// This is a conceptual example
+	// In real tests, you would configure a real test database
 
-	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
+	t.Skip("Conceptual example - requires configured test database")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -158,9 +158,9 @@ func TestUserRepository_Create(t *testing.T) {
 	}
 }
 
-// TestUserRepository_FindByEmail é um exemplo de teste de query
+// TestUserRepository_FindByEmail is a query test example
 func TestUserRepository_FindByEmail(t *testing.T) {
-	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
+	t.Skip("Conceptual example - requires configured test database")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -168,7 +168,7 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
-	// Criar usuário de teste
+	// Create test user
 	user := &User{
 		Name:     "Alice",
 		Email:    "alice@example.com",
@@ -179,7 +179,7 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
 
-	// Buscar por email
+	// Find by email
 	found, err := repo.FindByEmail(ctx, "alice@example.com")
 	if err != nil {
 		t.Fatalf("Failed to find user: %v", err)
@@ -194,9 +194,9 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 	}
 }
 
-// TestUserRepository_FindActive testa busca de usuários ativos
+// TestUserRepository_FindActive tests finding active users
 func TestUserRepository_FindActive(t *testing.T) {
-	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
+	t.Skip("Conceptual example - requires configured test database")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -204,7 +204,7 @@ func TestUserRepository_FindActive(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
-	// Criar usuários de teste
+	// Create test users
 	users := []*User{
 		{Name: "Alice", Email: "alice@example.com", Age: 28, IsActive: true},
 		{Name: "Bob", Email: "bob@example.com", Age: 32, IsActive: false},
@@ -217,7 +217,7 @@ func TestUserRepository_FindActive(t *testing.T) {
 		}
 	}
 
-	// Buscar apenas ativos
+	// Find only active users
 	active, err := repo.FindActive(ctx)
 	if err != nil {
 		t.Fatalf("Failed to find active users: %v", err)
@@ -234,9 +234,9 @@ func TestUserRepository_FindActive(t *testing.T) {
 	}
 }
 
-// TestUserRepository_Transaction testa operações em transação
+// TestUserRepository_Transaction tests transaction operations
 func TestUserRepository_Transaction(t *testing.T) {
-	t.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
+	t.Skip("Conceptual example - requires configured test database")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
@@ -244,7 +244,7 @@ func TestUserRepository_Transaction(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
-	// Testar transação bem-sucedida
+	// Test successful transaction
 	err := db.DB().WithTx(ctx, func(txDB *core.DB) error {
 		user := &User{
 			Name:     "Transaction Test",
@@ -259,7 +259,7 @@ func TestUserRepository_Transaction(t *testing.T) {
 		t.Fatalf("Transaction failed: %v", err)
 	}
 
-	// Verificar se o usuário foi criado
+	// Verify user was created
 	found, err := repo.FindByEmail(ctx, "tx@example.com")
 	if err != nil {
 		t.Fatalf("Failed to find user after transaction: %v", err)
@@ -269,7 +269,7 @@ func TestUserRepository_Transaction(t *testing.T) {
 		t.Error("User was not created in transaction")
 	}
 
-	// Testar rollback em caso de erro
+	// Test rollback on error
 	initialCount, _ := genus.Table[User](db).Count(ctx)
 
 	err = db.DB().WithTx(ctx, func(txDB *core.DB) error {
@@ -283,7 +283,7 @@ func TestUserRepository_Transaction(t *testing.T) {
 			return err
 		}
 
-		// Forçar erro para testar rollback
+		// Force error to test rollback
 		return sql.ErrTxDone
 	})
 
@@ -291,16 +291,16 @@ func TestUserRepository_Transaction(t *testing.T) {
 		t.Error("Expected transaction to fail")
 	}
 
-	// Verificar se o rollback funcionou
+	// Verify rollback worked
 	finalCount, _ := genus.Table[User](db).Count(ctx)
 	if finalCount != initialCount {
 		t.Errorf("Expected count to remain %d after rollback, got %d", initialCount, finalCount)
 	}
 }
 
-// BenchmarkUserRepository_FindActive benchmark para queries
+// BenchmarkUserRepository_FindActive benchmark for queries
 func BenchmarkUserRepository_FindActive(b *testing.B) {
-	b.Skip("Exemplo conceptual - requer banco de dados de teste configurado")
+	b.Skip("Conceptual example - requires configured test database")
 
 	db, cleanup := setupTestDB()
 	defer cleanup()
