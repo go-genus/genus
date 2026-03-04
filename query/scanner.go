@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 )
 
 // fieldPath representa o caminho para um campo através de embedded structs
 type fieldPath []int
 
+// fieldMapCache caches field maps per type to avoid rebuilding on every scan.
+var fieldMapCache sync.Map // map[reflect.Type]map[string]fieldPath
+
 // scanStruct faz o scan de uma row para uma struct.
-// Esta é uma das poucas funções que usa reflection, mas é controlada e isolada.
+// Usa cache de field maps para evitar reflection repetida.
 func scanStruct(rows *sql.Rows, dest interface{}) error {
 	destValue := reflect.ValueOf(dest)
 	if destValue.Kind() != reflect.Ptr {
@@ -28,29 +32,76 @@ func scanStruct(rows *sql.Rows, dest interface{}) error {
 		return fmt.Errorf("failed to get columns: %w", err)
 	}
 
-	// Mapeia os nomes das colunas para os caminhos dos campos da struct
-	fieldMap := buildFieldMap(destValue.Type())
+	// Get or build cached field map
+	fieldMap := getOrBuildFieldMap(destValue.Type())
 
-	// Cria os ponteiros para os valores a serem escaneados
-	scanValues := make([]interface{}, len(columns))
+	// Create scan values slice
+	numCols := len(columns)
+	scanValues := make([]interface{}, numCols)
+
+	// Use a single placeholder for unmapped columns
+	var placeholder interface{}
+
 	for i, colName := range columns {
 		if path, ok := fieldMap[colName]; ok {
 			field := getFieldByPath(destValue, path)
 			if field.IsValid() && field.CanAddr() {
 				scanValues[i] = field.Addr().Interface()
 			} else {
-				// Se o campo não é válido, usa um placeholder
-				var placeholder interface{}
 				scanValues[i] = &placeholder
 			}
 		} else {
-			// Se a coluna não existe na struct, usa um placeholder
-			var placeholder interface{}
 			scanValues[i] = &placeholder
 		}
 	}
 
 	return rows.Scan(scanValues...)
+}
+
+// scanStructFast is an optimized version that reuses scan value slices.
+// Call with pre-allocated scanValues slice for better performance in loops.
+func scanStructFast(rows *sql.Rows, dest interface{}, columns []string, fieldMap map[string]fieldPath, scanValues []interface{}) error {
+	destValue := reflect.ValueOf(dest).Elem()
+
+	// Use a single placeholder for unmapped columns
+	var placeholder interface{}
+
+	for i, colName := range columns {
+		if path, ok := fieldMap[colName]; ok {
+			field := getFieldByPath(destValue, path)
+			if field.IsValid() && field.CanAddr() {
+				scanValues[i] = field.Addr().Interface()
+			} else {
+				scanValues[i] = &placeholder
+			}
+		} else {
+			scanValues[i] = &placeholder
+		}
+	}
+
+	return rows.Scan(scanValues...)
+}
+
+// buildFieldMap builds a field map for a type (wrapper for compatibility).
+func buildFieldMap(typ reflect.Type) map[string]fieldPath {
+	return getOrBuildFieldMap(typ)
+}
+
+// getOrBuildFieldMap returns a cached field map or builds and caches one.
+func getOrBuildFieldMap(typ reflect.Type) map[string]fieldPath {
+	if cached, ok := fieldMapCache.Load(typ); ok {
+		return cached.(map[string]fieldPath)
+	}
+
+	fieldMap := buildFieldMapWithPrefix(typ, nil)
+	fieldMapCache.Store(typ, fieldMap)
+	return fieldMap
+}
+
+// GetCachedFieldMap returns the cached field map for a type.
+// Exported for use in builder.go.
+func GetCachedFieldMap(typ reflect.Type) map[string]fieldPath {
+	return getOrBuildFieldMap(typ)
 }
 
 // getFieldByPath navega até um campo usando um caminho de índices
@@ -68,22 +119,18 @@ func getFieldByPath(value reflect.Value, path fieldPath) reflect.Value {
 	return current
 }
 
-// buildFieldMap constrói um mapa de nome de coluna -> caminho do campo.
-func buildFieldMap(typ reflect.Type) map[string]fieldPath {
-	return buildFieldMapWithPrefix(typ, nil)
-}
-
 // buildFieldMapWithPrefix constrói um mapa de nome de coluna -> caminho do campo com suporte para embedded structs.
 func buildFieldMapWithPrefix(typ reflect.Type, parentPath fieldPath) map[string]fieldPath {
 	fieldMap := make(map[string]fieldPath)
 
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		currentPath := append(fieldPath(nil), parentPath...)
-		currentPath = append(currentPath, i)
+		currentPath := make(fieldPath, len(parentPath)+1)
+		copy(currentPath, parentPath)
+		currentPath[len(parentPath)] = i
 
 		// Se o campo é um embedded struct, processa recursivamente
-		if field.Anonymous {
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
 			embeddedMap := buildFieldMapWithPrefix(field.Type, currentPath)
 
 			// Mescla o mapa do embedded struct com o mapa atual
@@ -93,11 +140,19 @@ func buildFieldMapWithPrefix(typ reflect.Type, parentPath fieldPath) map[string]
 			continue
 		}
 
+		// Skip unexported fields
+		if field.PkgPath != "" {
+			continue
+		}
+
 		// Obtém o nome da coluna da tag `db`
 		colName := field.Tag.Get("db")
-		if colName == "" || colName == "-" {
-			// Se não tem tag ou é "-", pula o campo
+		if colName == "-" {
 			continue
+		}
+		if colName == "" {
+			// Use snake_case of field name as default
+			colName = toSnakeCase(field.Name)
 		}
 
 		fieldMap[colName] = currentPath
@@ -109,13 +164,18 @@ func buildFieldMapWithPrefix(typ reflect.Type, parentPath fieldPath) map[string]
 // toSnakeCase converte CamelCase para snake_case.
 func toSnakeCase(s string) string {
 	var result strings.Builder
+	result.Grow(len(s) + 5)
 	for i, r := range s {
 		if i > 0 && r >= 'A' && r <= 'Z' {
-			result.WriteRune('_')
+			result.WriteByte('_')
 		}
-		result.WriteRune(r)
+		if r >= 'A' && r <= 'Z' {
+			result.WriteByte(byte(r + 32))
+		} else {
+			result.WriteRune(r)
+		}
 	}
-	return strings.ToLower(result.String())
+	return result.String()
 }
 
 // GetFieldIndices retorna os índices dos campos de uma struct para scanning.
@@ -140,4 +200,9 @@ func GetFieldIndices(dest interface{}) ([]interface{}, error) {
 	}
 
 	return indices, nil
+}
+
+// ClearFieldMapCache clears the field map cache. Useful for testing.
+func ClearFieldMapCache() {
+	fieldMapCache = sync.Map{}
 }
