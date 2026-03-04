@@ -26,7 +26,7 @@ db.Where("nme = ?", "Alice").Find(&users)               Where(UserFields.Name.Eq
 | Problem | GORM / Traditional ORMs | Genus |
 |---------|------------------------|-------|
 | **Type Safety** | ❌ String-based queries, runtime errors | ✅ Compile-time verification with typed fields |
-| **Performance** | ❌ Heavy reflection overhead | ✅ Minimal reflection, up to 3x faster |
+| **Performance** | ❌ Heavy reflection overhead | ✅ Lightweight ORM, ~1.3x overhead vs raw SQL |
 | **Query Transparency** | ❌ Magic methods, hidden SQL | ✅ Explicit SQL, auto-logging included |
 | **Developer Experience** | ❌ No IDE autocomplete for queries | ✅ Full autocomplete, catch typos instantly |
 | **Production Readiness** | ⚠️ Runtime surprises in production | ✅ If it compiles, it works |
@@ -206,24 +206,31 @@ func main() {
 
 ## Performance
 
-### Benchmarks vs GORM
+### Benchmarks (Genus vs Raw SQL)
 
-| Operation | GORM | Genus | Improvement |
-|-----------|------|-------|-------------|
-| **Find (single)** | 1,245 ns/op | 412 ns/op | **3.0x faster** |
-| **Where + Order + Limit** | 2,890 ns/op | 1,102 ns/op | **2.6x faster** |
-| **Complex query (5 conditions)** | 4,567 ns/op | 1,834 ns/op | **2.5x faster** |
-| **Insert** | 3,234 ns/op | 1,456 ns/op | **2.2x faster** |
-| **Update** | 2,987 ns/op | 1,289 ns/op | **2.3x faster** |
+All ORMs add overhead for type safety and developer convenience. Here's what you pay:
 
-*Benchmarks run on Apple M5, Go 1.21, PostgreSQL 15. Results may vary.*
+| Operation | Genus | Raw SQL | Overhead | Notes |
+|-----------|-------|---------|----------|-------|
+| **Complex query (10 rows)** | 93µs | 73µs | 1.3x | 5 conditions + ORDER + LIMIT |
+| **First (single row)** | 7.1µs | ~5µs | ~1.4x | Index lookup |
+| **Insert** | 7.7µs | 5.8µs | 1.3x | With reflection overhead |
+| **Update** | 7.6µs | 2.0µs | 3.7x | Reflection cost noticeable |
+| **Query builder only** | 0.5µs | N/A | N/A | Construction without execution |
+| **Count** | 8.3µs | ~6µs | ~1.4x | Aggregate query |
 
-### Why Faster?
+*Benchmarks run on Apple M4, Go 1.25, SQLite3 in-memory. Run `go test -bench=. ./benchmarks/` to verify.*
 
-- ⚡ **Minimal reflection** — Type information known at compile time
-- ⚡ **No interface boxing** — Generics eliminate `interface{}` overhead
-- ⚡ **Efficient SQL building** — String concatenation optimized
-- ⚡ **Direct struct scanning** — No intermediate map conversions
+### The Trade-off
+
+You trade a small performance overhead for:
+
+- ✅ **Compile-time safety** — No more typos causing runtime errors
+- ✅ **IDE autocomplete** — Full IntelliSense for all queries
+- ✅ **Maintainability** — Refactor safely with compiler support
+- ✅ **Developer productivity** — Write queries faster with less debugging
+
+For most applications, the overhead is negligible (<10µs per query). If you're building a high-frequency trading system, use raw SQL. For everything else, type safety wins.
 
 ### Run Benchmarks Yourself
 
@@ -238,7 +245,7 @@ go test -bench=. -benchmem ./benchmarks/...
 ## Philosophy
 
 ### 1. Minimal Magic
-Practically zero runtime reflection (only for result scanning). What you write is what gets executed.
+Uses reflection only where necessary (result scanning, model introspection). Query building is reflection-free.
 
 ### 2. Type Safety First
 All queries are verified at compile time. If your code compiles, your queries are valid.
@@ -364,7 +371,7 @@ customDB := genus.New(sqlDB, &MyLogger{})
 | Code generation required | ❌ | ✅ | ✅ | ❌ | ⚠️ Optional |
 | Compile-time safety | ❌ | ✅ | ✅ | ❌ | ✅ |
 | Direct `[]T` return | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Reflection overhead | ❌ Heavy | ✅ Minimal | ✅ None | ⚠️ Some | ✅ Minimal |
+| Reflection overhead | ⚠️ Heavy | ✅ Minimal | ✅ None | ⚠️ Some | ⚠️ Moderate |
 | SQL transparency | ⚠️ | ❌ | ✅ | ✅ | ✅ |
 | Auto SQL logging | ⚠️ | ⚠️ | ❌ | ⚠️ | ✅ |
 | Relationships | ✅ | ✅ | ❌ | ✅ | ✅ |
