@@ -1,9 +1,9 @@
 # Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+All notable changes to this project will be documented in this file.
 
-O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [7.0.0] - 2026-03-04
 
@@ -2270,47 +2270,11 @@ var UserFields = struct {
 - `examples/logging` - Configuração de logging customizado
 - `examples/testing` - Padrões de teste
 
----
-
-## Próximas Versões
-
-### [5.0.0] - Planejado
-
-#### Performance & Developer Experience
-
-- Cursor-based pagination (mais eficiente que OFFSET para grandes datasets)
-- UPSERT/ON CONFLICT support (INSERT ... ON CONFLICT DO UPDATE)
-- Query profiling / slow query detection (detecção automática de queries lentas)
-- Dry run mode (visualizar SQL sem executar)
-- Automatic query optimization
-
-#### Data Types
-
-- JSON/JSONB field support com queries type-safe
-- Full-text search (PostgreSQL tsvector/tsquery, MySQL FULLTEXT)
-
-#### Security & Compliance
-
-- Automatic audit logging (tracking de mudanças: quem, quando, o quê)
-- Row-level security para multi-tenant apps
-
-#### Resilience
-
-- Connection retry com circuit breaker e exponential backoff
-- Query timeout helpers por operação
-
-#### Integration
-
-- GraphQL integration
-- Schema diff and migration generation
-- Multi-tenancy support
-- Real-time subscriptions (PostgreSQL LISTEN/NOTIFY)
-- Read-your-writes consistency helpers
-
----
-
-[4.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v4.0.0
-[3.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v3.0.0
-[2.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v2.0.0
-[1.0.0]: https://github.com/GabrielOnRails/genus/releases/tag/v1.0.0
-[0.1.0]: https://github.com/GabrielOnRails/genus/releases/tag/v0.1.0
+[7.0.0]: https://github.com/go-genus/genus/releases/tag/v7.0.0
+[6.0.0]: https://github.com/go-genus/genus/releases/tag/v6.0.0
+[5.0.0]: https://github.com/go-genus/genus/releases/tag/v5.0.0
+[4.0.0]: https://github.com/go-genus/genus/releases/tag/v4.0.0
+[3.0.0]: https://github.com/go-genus/genus/releases/tag/v3.0.0
+[2.0.0]: https://github.com/go-genus/genus/releases/tag/v2.0.0
+[1.0.0]: https://github.com/go-genus/genus/releases/tag/v1.0.0
+[0.1.0]: https://github.com/go-genus/genus/releases/tag/v0.1.0
