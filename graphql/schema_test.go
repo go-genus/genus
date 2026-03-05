@@ -441,7 +441,7 @@ func TestGenerateSchema_WithScalar(t *testing.T) {
 	gen.AddScalar("JSON")
 	gen.RegisterType(Post{})
 
-	schema := gen.GenerateSchema()
+	_ = gen.GenerateSchema()
 	// Custom scalars are tracked but only DateTime is printed automatically
 	if !gen.scalars["JSON"] {
 		t.Error("JSON scalar should be registered")

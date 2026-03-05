@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -708,14 +709,28 @@ func TestServerlessPool_maybeScaleDown_WithExcess(t *testing.T) {
 
 	config := DefaultServerlessPoolConfig()
 	config.WarmConnections = 1
-	config.MaxIdleConns = 0 // Set very low so stats.Idle > MaxIdleConns
-	config.ColdStartTimeout = 5 * time.Second
-	config.HealthCheckInterval = 1 * time.Hour
-	config.ScaleDownDelay = 1 * time.Hour
+	config.MaxOpenConns = 10
+	config.MaxIdleConns = 5 // High idle count so DB keeps them
 	pool := NewServerlessPool(db, config)
 
-	// Manually add extra warm connections
+	// Create connections and release them to make them idle in the pool
 	ctx := t.Context()
+	conns := make([]*sql.Conn, 5)
+	for i := range conns {
+		c, err := db.Conn(ctx)
+		if err != nil {
+			t.Fatalf("failed to get conn: %v", err)
+		}
+		conns[i] = c
+	}
+	for _, c := range conns {
+		c.Close()
+	}
+
+	// Now reduce the config MaxIdleConns so the condition triggers
+	pool.config.MaxIdleConns = 0
+
+	// Add extra warm connections
 	conn1, _ := db.Conn(ctx)
 	conn2, _ := db.Conn(ctx)
 	conn3, _ := db.Conn(ctx)
@@ -724,7 +739,7 @@ func TestServerlessPool_maybeScaleDown_WithExcess(t *testing.T) {
 	pool.warmConns = append(pool.warmConns, conn1, conn2, conn3)
 	pool.mu.Unlock()
 
-	// Scale down should reduce to WarmConnections (1)
+	// Now stats.Idle > config.MaxIdleConns (0) should be true
 	pool.maybeScaleDown()
 
 	pool.mu.RLock()

@@ -771,6 +771,115 @@ func TestOutputMermaidAppliedNode(t *testing.T) {
 }
 
 // ========================================
+// Tests for loadAppliedMigrations with working executor
+// ========================================
+
+func TestLoadAppliedMigrations(t *testing.T) {
+	t.Run("loads applied migrations from DB", func(t *testing.T) {
+		executor := newMockExecutor(t)
+		ctx := context.Background()
+
+		// Create schema_migrations table and insert data
+		_, err := executor.ExecContext(ctx, `CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT, applied_at DATETIME)`)
+		if err != nil {
+			t.Fatalf("failed to create table: %v", err)
+		}
+		_, err = executor.ExecContext(ctx, `INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, 'first', '2024-01-01')`)
+		if err != nil {
+			t.Fatalf("failed to insert: %v", err)
+		}
+		_, err = executor.ExecContext(ctx, `INSERT INTO schema_migrations (version, name, applied_at) VALUES (2, 'second', '2024-01-02')`)
+		if err != nil {
+			t.Fatalf("failed to insert: %v", err)
+		}
+
+		v := NewMigrationVisualizer("", executor)
+
+		err = v.loadAppliedMigrations(ctx)
+		if err != nil {
+			t.Fatalf("loadAppliedMigrations failed: %v", err)
+		}
+
+		if !v.appliedSet[1] {
+			t.Error("expected version 1 to be applied")
+		}
+		if !v.appliedSet[2] {
+			t.Error("expected version 2 to be applied")
+		}
+		if v.appliedSet[3] {
+			t.Error("expected version 3 to NOT be applied")
+		}
+	})
+}
+
+// ========================================
+// Tests for BuildDAG with applied migrations from DB
+// ========================================
+
+func TestBuildDAGWithAppliedFromDB(t *testing.T) {
+	dir := t.TempDir()
+	createMigrationFile(t, dir, "001_create_users.go", "package migrations\n")
+	createMigrationFile(t, dir, "002_create_posts.go", "package migrations\n")
+
+	executor := newMockExecutor(t)
+	ctx := context.Background()
+
+	// Create schema_migrations table and mark version 1 as applied
+	executor.ExecContext(ctx, `CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT, applied_at DATETIME)`)
+	executor.ExecContext(ctx, `INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, 'create_users', '2024-01-01')`)
+
+	v := NewMigrationVisualizer(dir, executor)
+	dag, err := v.BuildDAG(ctx)
+	if err != nil {
+		t.Fatalf("BuildDAG failed: %v", err)
+	}
+
+	// Version 1 should be applied, version 2 pending
+	for _, node := range dag.Nodes {
+		if node.Version == 1 && node.Status != "applied" {
+			t.Errorf("expected version 1 to be applied, got %s", node.Status)
+		}
+		if node.Version == 2 && node.Status != "pending" {
+			t.Errorf("expected version 2 to be pending, got %s", node.Status)
+		}
+	}
+}
+
+// ========================================
+// Tests for outputASCII with multiple depth layers
+// ========================================
+
+func TestOutputASCIIMultipleLayers(t *testing.T) {
+	v := NewMigrationVisualizer("", nil)
+
+	dag := &MigrationDAG{
+		Nodes: []MigrationNode{
+			{Version: 1, Description: "first", Status: "applied"},
+			{Version: 2, Description: "second", Status: "pending"},
+			{Version: 3, Description: "third", Status: "pending"},
+		},
+		Edges: []MigrationEdge{
+			{From: 1, To: 2},
+			{From: 2, To: 3},
+		},
+	}
+
+	var buf bytes.Buffer
+	err := v.outputASCII(dag, &buf)
+	if err != nil {
+		t.Fatalf("outputASCII failed: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "[APPLIED]") {
+		t.Error("expected [APPLIED]")
+	}
+	if !strings.Contains(output, "[PENDING]") {
+		t.Error("expected [PENDING]")
+	}
+}
+
+// ========================================
 // Helpers
 // ========================================
 

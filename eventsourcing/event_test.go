@@ -921,15 +921,13 @@ func TestSnapshotRepository_Save_And_Load(t *testing.T) {
 		return newSnapshotableAggregate()
 	}, 2) // snapshot every 2 events
 
-	// Create aggregate with 2 events (triggers snapshot at version 2)
-	agg := newSnapshotableAggregate()
-	agg.ID = "user-1"
-	agg.RaiseEvent("NameChanged", map[string]interface{}{"name": "Alice"})
-	agg.RaiseEvent("NameChanged", map[string]interface{}{"name": "Bob"})
+	// Create events manually with explicit IDs to avoid UUID collision
+	events := []Event{
+		{ID: "snap-evt-1", AggregateID: "user-1", AggregateType: "SnapshotAggregate", EventType: "NameChanged", Version: 1, Data: map[string]interface{}{"name": "Alice"}, Timestamp: time.Now()},
+		{ID: "snap-evt-2", AggregateID: "user-1", AggregateType: "SnapshotAggregate", EventType: "NameChanged", Version: 2, Data: map[string]interface{}{"name": "Bob"}, Timestamp: time.Now()},
+	}
 
-	// Save uses SnapshotStore.Save which uses ON DUPLICATE KEY (MySQL branch)
-	// This won't work on SQLite. We'll save events manually and create snapshot manually.
-	err := store.Append(ctx, agg.GetUncommittedEvents()...)
+	err := store.Append(ctx, events...)
 	if err != nil {
 		t.Fatalf("Append error = %v", err)
 	}

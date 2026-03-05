@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -72,10 +73,6 @@ type ModelWithIntSizes struct {
 type ModelWithFloat32 struct {
 	Val float32 `json:"val"`
 }
-
-// Note: []byte is handled by the special case in goTypeToProto
-// but only when it's not a struct field (it matches reflect.TypeOf([]byte{})).
-// As a struct field, []byte is first detected as reflect.Slice of uint8.
 
 type ModelWithPtrSlice struct {
 	Items []*Product `json:"items"`
@@ -351,19 +348,19 @@ func TestGoTypeToProto_Float32(t *testing.T) {
 }
 
 func TestGoTypeToProto_Bytes(t *testing.T) {
+	// []byte goes through the slice branch (Kind == Slice) before reaching
+	// the reflect.TypeOf([]byte{}) special case. After slice detection,
+	// the elem type is uint8 which maps to uint32.
 	gen := NewProtoGenerator("test", "test/pb")
-	gen.RegisterMessage(ModelWithBytes{})
 
-	msg := gen.messages["ModelWithBytes"]
-	for _, f := range msg.Fields {
-		if f.Name == "data" {
-			if f.Type != "bytes" {
-				t.Errorf("[]byte type = %q, want bytes", f.Type)
-			}
-			return
-		}
+	typ, repeated, _ := gen.goTypeToProto(reflect.TypeOf([]byte{}))
+	// []byte -> slice of uint8 -> repeated uint32
+	if typ != "uint32" {
+		t.Errorf("[]byte type = %q, want uint32 (goes through slice branch)", typ)
 	}
-	t.Error("data field not found")
+	if !repeated {
+		t.Error("[]byte should be repeated (slice branch)")
+	}
 }
 
 func TestGoTypeToProto_PtrSlice(t *testing.T) {

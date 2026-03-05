@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -486,6 +487,100 @@ func TestToSnakeCase(t *testing.T) {
 				t.Errorf("toSnakeCase(%q) = %q, want %q", tt.input, result, tt.expected)
 			}
 		})
+	}
+}
+
+// ========================================
+// Tests for buildColumnDefinition with different dialects
+// ========================================
+
+func TestBuildColumnDefinitionDialects(t *testing.T) {
+	t.Run("PostgreSQL ID field gets SERIAL", func(t *testing.T) {
+		dialect := &pgAutoDialect{}
+		field := reflect.StructField{
+			Name: "ID",
+			Type: reflect.TypeOf(int64(0)),
+			Tag:  `db:"id"`,
+		}
+		result := buildColumnDefinition(field, dialect)
+		if !contains(result, "SERIAL") {
+			t.Errorf("expected SERIAL for PG ID field, got '%s'", result)
+		}
+	})
+
+	t.Run("MySQL ID field gets AUTO_INCREMENT", func(t *testing.T) {
+		dialect := &mysqlAutoDialect{}
+		field := reflect.StructField{
+			Name: "ID",
+			Type: reflect.TypeOf(int64(0)),
+			Tag:  `db:"id"`,
+		}
+		result := buildColumnDefinition(field, dialect)
+		if !contains(result, "AUTO_INCREMENT") {
+			t.Errorf("expected AUTO_INCREMENT for MySQL ID field, got '%s'", result)
+		}
+	})
+}
+
+// ========================================
+// Tests for getSQLType with Optional struct
+// ========================================
+
+func TestGetSQLTypeOptional(t *testing.T) {
+	// Create a struct named Optional with a field
+	type Optional struct {
+		Value string
+	}
+
+	dialect := sqlite.New()
+	result := getSQLType(reflect.TypeOf(Optional{}), dialect)
+	// Should try to get type of first field (string)
+	if result != "TEXT" {
+		t.Errorf("expected TEXT for Optional, got '%s'", result)
+	}
+}
+
+// pgAutoDialect returns $N placeholder for PG path in buildColumnDefinition.
+type pgAutoDialect struct{}
+
+func (d *pgAutoDialect) Placeholder(n int) string {
+	return fmt.Sprintf("$%d", n)
+}
+
+func (d *pgAutoDialect) QuoteIdentifier(name string) string {
+	return `"` + name + `"`
+}
+
+func (d *pgAutoDialect) GetType(goType string) string {
+	switch goType {
+	case "int64":
+		return "BIGINT"
+	case "string":
+		return "TEXT"
+	default:
+		return "TEXT"
+	}
+}
+
+// mysqlAutoDialect returns ? placeholder and backtick quotes for MySQL path.
+type mysqlAutoDialect struct{}
+
+func (d *mysqlAutoDialect) Placeholder(n int) string {
+	return "?"
+}
+
+func (d *mysqlAutoDialect) QuoteIdentifier(name string) string {
+	return "`" + name + "`"
+}
+
+func (d *mysqlAutoDialect) GetType(goType string) string {
+	switch goType {
+	case "int64":
+		return "BIGINT"
+	case "string":
+		return "VARCHAR(255)"
+	default:
+		return "TEXT"
 	}
 }
 

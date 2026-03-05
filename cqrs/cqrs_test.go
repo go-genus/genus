@@ -12,14 +12,20 @@ import (
 // ========================================
 
 type CreateUserCommand struct {
-	BaseCommand
 	Name  string
 	Email string
 }
 
+func (c CreateUserCommand) CommandName() string {
+	return "CreateUser"
+}
+
 type ValidatableCommand struct {
-	BaseCommand
 	valid bool
+}
+
+func (c ValidatableCommand) CommandName() string {
+	return "Validatable"
 }
 
 func (c ValidatableCommand) Validate() error {
@@ -30,8 +36,11 @@ func (c ValidatableCommand) Validate() error {
 }
 
 type GetUserQuery struct {
-	BaseQuery
 	ID string
+}
+
+func (q GetUserQuery) QueryName() string {
+	return "GetUser"
 }
 
 type UserResult struct {
@@ -154,9 +163,8 @@ func TestRegister_AndDispatch(t *testing.T) {
 	}))
 
 	cmd := CreateUserCommand{
-		BaseCommand: NewBaseCommand("CreateUser"),
-		Name:        "Alice",
-		Email:       "alice@example.com",
+		Name:  "Alice",
+		Email: "alice@example.com",
 	}
 
 	err := Dispatch(context.Background(), bus, cmd)
@@ -177,7 +185,7 @@ func TestRegisterFunc_AndDispatch(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -189,7 +197,7 @@ func TestRegisterFunc_AndDispatch(t *testing.T) {
 
 func TestDispatch_NoHandler(t *testing.T) {
 	bus := NewCommandBus()
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err == nil {
 		t.Error("expected error for missing handler")
@@ -204,7 +212,7 @@ func TestDispatch_InvalidHandlerType(t *testing.T) {
 	// Register with wrong type manually
 	bus.handlers["CreateUser"] = "not a handler"
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err == nil {
 		t.Error("expected error for invalid handler type")
@@ -222,7 +230,7 @@ func TestDispatch_HandlerReturnsError(t *testing.T) {
 		return expectedErr
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("error = %v, want %v", err, expectedErr)
@@ -252,7 +260,7 @@ func TestCommandBus_Use_Middleware(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -290,7 +298,7 @@ func TestRegisterQuery_AndAsk(t *testing.T) {
 		return UserResult{ID: q.ID, Name: "Alice"}, nil
 	}))
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	result, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if err != nil {
 		t.Errorf("Ask error = %v", err)
@@ -310,7 +318,7 @@ func TestRegisterQueryFunc_AndAsk(t *testing.T) {
 		return UserResult{ID: q.ID, Name: "Bob"}, nil
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "456"}
+	query := GetUserQuery{ID: "456"}
 	result, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if err != nil {
 		t.Errorf("Ask error = %v", err)
@@ -322,7 +330,7 @@ func TestRegisterQueryFunc_AndAsk(t *testing.T) {
 
 func TestAsk_NoHandler(t *testing.T) {
 	bus := NewQueryBus()
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	_, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if err == nil {
 		t.Error("expected error for missing handler")
@@ -336,7 +344,7 @@ func TestAsk_InvalidHandlerType(t *testing.T) {
 	bus := NewQueryBus()
 	bus.handlers["GetUser"] = "not a handler"
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	_, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if err == nil {
 		t.Error("expected error for invalid handler type")
@@ -354,7 +362,7 @@ func TestAsk_HandlerReturnsError(t *testing.T) {
 		return UserResult{}, expectedErr
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	_, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("error = %v, want %v", err, expectedErr)
@@ -377,7 +385,7 @@ func TestQueryBus_Use_Middleware(t *testing.T) {
 		return UserResult{Name: "Alice"}, nil
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	result, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if err != nil {
 		t.Errorf("Ask error = %v", err)
@@ -409,7 +417,7 @@ func TestQueryBus_Middleware_Error(t *testing.T) {
 		return UserResult{}, nil
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	_, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("error = %v, want %v", err, expectedErr)
@@ -523,7 +531,7 @@ func TestLoggingMiddleware_Success(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -553,7 +561,7 @@ func TestLoggingMiddleware_Error(t *testing.T) {
 		return errors.New("fail")
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	_ = Dispatch(context.Background(), bus, cmd)
 
 	if len(logs) != 2 {
@@ -576,7 +584,7 @@ func TestValidationMiddleware_Pass(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -596,7 +604,7 @@ func TestValidationMiddleware_Fail(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err == nil {
 		t.Error("expected validation error")
@@ -616,7 +624,7 @@ func TestAutoValidationMiddleware_ValidCommand(t *testing.T) {
 		return nil
 	})
 
-	cmd := ValidatableCommand{BaseCommand: NewBaseCommand("Validatable"), valid: true}
+	cmd := ValidatableCommand{valid: true}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -634,7 +642,7 @@ func TestAutoValidationMiddleware_InvalidCommand(t *testing.T) {
 		return nil
 	})
 
-	cmd := ValidatableCommand{BaseCommand: NewBaseCommand("Validatable"), valid: false}
+	cmd := ValidatableCommand{valid: false}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err == nil {
 		t.Error("expected validation error")
@@ -654,7 +662,7 @@ func TestAutoValidationMiddleware_NonValidatableCommand(t *testing.T) {
 		return nil
 	})
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Dispatch(context.Background(), bus, cmd)
 	if err != nil {
 		t.Errorf("Dispatch error = %v", err)
@@ -676,7 +684,7 @@ func TestCachingQueryMiddleware_CacheHit(t *testing.T) {
 		return UserResult{Name: "Alice"}, nil
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 
 	// First call
 	result1, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
@@ -710,7 +718,7 @@ func TestCachingQueryMiddleware_CacheMiss_Error(t *testing.T) {
 		return UserResult{}, expectedErr
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	_, err := Ask[GetUserQuery, UserResult](context.Background(), bus, query)
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("error = %v, want %v", err, expectedErr)
@@ -743,7 +751,7 @@ func TestMediator_Send(t *testing.T) {
 		return nil
 	}))
 
-	cmd := CreateUserCommand{BaseCommand: NewBaseCommand("CreateUser")}
+	cmd := CreateUserCommand{}
 	err := Send(context.Background(), m, cmd)
 	if err != nil {
 		t.Errorf("Send error = %v", err)
@@ -760,7 +768,7 @@ func TestMediator_Request(t *testing.T) {
 		return UserResult{ID: q.ID, Name: "Alice"}, nil
 	})
 
-	query := GetUserQuery{BaseQuery: NewBaseQuery("GetUser"), ID: "123"}
+	query := GetUserQuery{ID: "123"}
 	result, err := Request[GetUserQuery, UserResult](context.Background(), m, query)
 	if err != nil {
 		t.Errorf("Request error = %v", err)

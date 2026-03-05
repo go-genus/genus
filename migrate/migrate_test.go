@@ -728,6 +728,71 @@ func TestRunMigration(t *testing.T) {
 }
 
 // ========================================
+// Tests for createMigrationsTable with different dialects
+// ========================================
+
+func TestCreateMigrationsTableDialects(t *testing.T) {
+	t.Run("PostgreSQL types", func(t *testing.T) {
+		db := newTestDB(t)
+		logger := newMockLogger()
+		// pgDialectMock returns "$1" style placeholders
+		dialect := &pgMigrateDialect{}
+		m := New(db, dialect, logger, Config{})
+		ctx := context.Background()
+
+		// This will attempt to create with PostgreSQL types (BIGINT, VARCHAR, TIMESTAMP)
+		// SQLite is flexible enough to accept these
+		err := m.createMigrationsTable(ctx)
+		if err != nil {
+			t.Fatalf("createMigrationsTable with PG types failed: %v", err)
+		}
+	})
+
+	t.Run("MySQL types", func(t *testing.T) {
+		db := newTestDB(t)
+		logger := newMockLogger()
+		dialect := &mysqlMigrateDialect{}
+		m := New(db, dialect, logger, Config{})
+		ctx := context.Background()
+
+		err := m.createMigrationsTable(ctx)
+		if err != nil {
+			t.Fatalf("createMigrationsTable with MySQL types failed: %v", err)
+		}
+	})
+}
+
+// pgMigrateDialect returns "$N" placeholders for PostgreSQL path.
+type pgMigrateDialect struct{}
+
+func (d *pgMigrateDialect) Placeholder(n int) string {
+	return fmt.Sprintf("$%d", n)
+}
+
+func (d *pgMigrateDialect) QuoteIdentifier(name string) string {
+	return fmt.Sprintf(`"%s"`, name)
+}
+
+func (d *pgMigrateDialect) GetType(goType string) string {
+	return "TEXT"
+}
+
+// mysqlMigrateDialect returns "?" placeholders and backtick quotes for MySQL path.
+type mysqlMigrateDialect struct{}
+
+func (d *mysqlMigrateDialect) Placeholder(n int) string {
+	return "?"
+}
+
+func (d *mysqlMigrateDialect) QuoteIdentifier(name string) string {
+	return "`" + name + "`"
+}
+
+func (d *mysqlMigrateDialect) GetType(goType string) string {
+	return "TEXT"
+}
+
+// ========================================
 // Tests for MigrationStatus
 // ========================================
 
