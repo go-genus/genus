@@ -452,6 +452,9 @@ func TestGenerateSchema_Connection(t *testing.T) {
 	gen := NewSchemaGenerator()
 	gen.RegisterType(Post{})
 
+	// First call registers connections via generateQueryType
+	_ = gen.GenerateSchema()
+	// Second call includes the connections registered in the first call
 	schema := gen.GenerateSchema()
 	if !strings.Contains(schema, "type PostEdge") {
 		t.Error("schema should contain PostEdge")
