@@ -146,6 +146,10 @@ func (s *ConsistentHashStrategy) binarySearch(hash uint32) int {
 	return low
 }
 
+// sqlOpen é a função usada para abrir conexões SQL.
+// Pode ser substituída em testes para simular falhas.
+var sqlOpen = sql.Open
+
 // Shard representa uma conexão de shard.
 type Shard struct {
 	Index int
@@ -182,7 +186,7 @@ func NewShardManager(driver string, config ShardConfig) (*ShardManager, error) {
 
 	shards := make([]*Shard, len(config.DSNs))
 	for i, dsn := range config.DSNs {
-		db, err := sql.Open(driver, dsn)
+		db, err := sqlOpen(driver, dsn)
 		if err != nil {
 			// Fecha conexões já abertas
 			for j := 0; j < i; j++ {

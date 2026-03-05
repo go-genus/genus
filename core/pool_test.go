@@ -108,3 +108,42 @@ func TestPoolConfig_Chaining(t *testing.T) {
 		t.Errorf("ConnMaxIdleTime = %v, want 15m", config.ConnMaxIdleTime)
 	}
 }
+
+func TestPoolConfig_Apply(t *testing.T) {
+	sqlDB := getMockSQLDB()
+	defer sqlDB.Close()
+
+	config := DefaultPoolConfig()
+	config.Apply(sqlDB)
+
+	stats := sqlDB.Stats()
+	// Just verify it doesn't panic and stats are accessible
+	_ = stats
+}
+
+func TestPoolConfig_Apply_ZeroValues(t *testing.T) {
+	sqlDB := getMockSQLDB()
+	defer sqlDB.Close()
+
+	config := PoolConfig{
+		MaxOpenConns:    0,
+		MaxIdleConns:    0,
+		ConnMaxLifetime: 0,
+		ConnMaxIdleTime: 0,
+	}
+	// Should not set anything when values are <= 0
+	config.Apply(sqlDB)
+}
+
+func TestPoolConfig_Apply_AllPositive(t *testing.T) {
+	sqlDB := getMockSQLDB()
+	defer sqlDB.Close()
+
+	config := PoolConfig{
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 30 * time.Minute,
+		ConnMaxIdleTime: 5 * time.Minute,
+	}
+	config.Apply(sqlDB)
+}

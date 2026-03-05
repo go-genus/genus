@@ -240,6 +240,36 @@ func TestTableCachePrefix(t *testing.T) {
 	}
 }
 
+func TestNewInMemoryCacheDefaultMaxEntries(t *testing.T) {
+	// maxEntries <= 0 deve usar o valor padrão 10000
+	cache := NewInMemoryCache(0)
+	if cache.maxEntries != 10000 {
+		t.Errorf("Expected default maxEntries 10000, got %d", cache.maxEntries)
+	}
+
+	cache = NewInMemoryCache(-5)
+	if cache.maxEntries != 10000 {
+		t.Errorf("Expected default maxEntries 10000, got %d", cache.maxEntries)
+	}
+}
+
+func TestEvictOldestEmptyOrder(t *testing.T) {
+	// Testa evictOldest com order vazio (não deve dar panic)
+	cache := NewInMemoryCache(1)
+
+	// Força chamada de evictOldest com order vazio
+	cache.mu.Lock()
+	cache.order = []string{}
+	cache.entries = make(map[string]*cacheEntry)
+	cache.evictOldest()
+	cache.mu.Unlock()
+
+	// Deve continuar funcionando sem erros
+	if len(cache.entries) != 0 {
+		t.Errorf("Expected 0 entries, got %d", len(cache.entries))
+	}
+}
+
 func TestLRUEviction(t *testing.T) {
 	cache := NewInMemoryCache(3) // Very small cache
 	ctx := context.Background()
