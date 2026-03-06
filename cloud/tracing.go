@@ -11,8 +11,8 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/exporters/jaeger"
-	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/exporters/jaeger"  //nolint:staticcheck // maintaining backward compatibility
+	"go.opentelemetry.io/otel/exporters/zipkin"  //nolint:staticcheck // maintaining backward compatibility
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -447,7 +447,7 @@ func NewQueryTracer(tracer trace.Tracer, maxStore int) *QueryTracer {
 
 // Trace rastreia uma query.
 func (qt *QueryTracer) Trace(ctx context.Context, query string, fn func() error) error {
-	ctx, span := qt.tracer.Start(ctx, "db.query",
+	_, span := qt.tracer.Start(ctx, "db.query",
 		trace.WithAttributes(semconv.DBStatement(query)),
 	)
 	defer span.End()

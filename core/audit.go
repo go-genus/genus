@@ -412,9 +412,9 @@ func (a *Auditor) GetAuditHistory(ctx context.Context, tableName string, recordI
 			return nil, err
 		}
 
-		json.Unmarshal(oldJSON, &entry.OldValues)
-		json.Unmarshal(newJSON, &entry.NewValues)
-		json.Unmarshal(metaJSON, &entry.Metadata)
+		_ = json.Unmarshal(oldJSON, &entry.OldValues)
+		_ = json.Unmarshal(newJSON, &entry.NewValues)
+		_ = json.Unmarshal(metaJSON, &entry.Metadata)
 
 		entries = append(entries, entry)
 	}

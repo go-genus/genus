@@ -183,8 +183,8 @@ func TestOptimizer_AutoIndex_DryRun(t *testing.T) {
 	analysis := &QueryAnalysis{
 		MissingIndexes: []IndexSuggestion{
 			{
-				Table:    "users",
-				Columns:  []string{"name"},
+				Table:     "users",
+				Columns:   []string{"name"},
 				CreateSQL: `CREATE INDEX "idx_users_name" ON "users" ("name")`,
 			},
 		},

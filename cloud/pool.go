@@ -34,9 +34,9 @@ type ServerlessPoolConfig struct {
 	HealthCheckTimeout  time.Duration
 
 	// Retry
-	MaxRetries     int
-	RetryDelay     time.Duration
-	RetryMaxDelay  time.Duration
+	MaxRetries      int
+	RetryDelay      time.Duration
+	RetryMaxDelay   time.Duration
 	RetryMultiplier float64
 }
 

@@ -97,9 +97,7 @@ func TestFastBuilder_Where_Between(t *testing.T) {
 func TestFastBuilder_Where_Between_Invalid(t *testing.T) {
 	b := NewFastBuilder[testUser](&mockExecutor{}, &mockDialect{}, "users")
 	b.Where(Condition{Field: "age", Operator: OpBetween, Value: []int{18}})
-	if len(b.conditions) > 0 && b.conditions[0] != "" {
-		// It may add empty string
-	}
+	_ = b.conditions // Between with single value may add empty condition
 }
 
 func TestFastBuilder_OrderByAsc(t *testing.T) {

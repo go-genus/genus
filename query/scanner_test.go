@@ -191,7 +191,9 @@ func TestGetFieldIndices_NotStruct(t *testing.T) {
 }
 
 func TestClearFieldMapCache(t *testing.T) {
-	type X struct{ ID int64 `db:"id"` }
+	type X struct {
+		ID int64 `db:"id"`
+	}
 	getOrBuildFieldMap(reflect.TypeOf(X{}))
 	ClearFieldMapCache()
 	// Should not panic and cache should be empty

@@ -1,0 +1,34 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosimple
+    - typecheck
+
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - fmt.Fprintf
+      - fmt.Fprintln
+      - fmt.Fprint
+      - (io.Closer).Close
+      - (*database/sql.Tx).Rollback
+      - (encoding/json.Encoder).Encode
+
+issues:
+  exclude-dirs:
+    - examples
+    - playground
+    - benchmarks
+    - cmd
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unused

@@ -26,7 +26,7 @@ func TestWithPrimary(t *testing.T) {
 }
 
 func TestUsePrimary_NilContext(t *testing.T) {
-	// nil context deve retornar false sem panic
+	//nolint:staticcheck // testing nil context behavior intentionally
 	if UsePrimary(nil) {
 		t.Error("UsePrimary(nil) = true, want false")
 	}

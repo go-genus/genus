@@ -495,9 +495,7 @@ func TestNewPgBouncerPool(t *testing.T) {
 	defer pool.db.Close()
 
 	// Check that default port was applied
-	if config.Port != 0 {
-		// Port was set in the function
-	}
+	_ = config.Port
 }
 
 func TestNewPgBouncerPool_DefaultPort(t *testing.T) {

@@ -11,15 +11,15 @@ import (
 type ProtoType string
 
 const (
-	ProtoString   ProtoType = "string"
-	ProtoInt32    ProtoType = "int32"
-	ProtoInt64    ProtoType = "int64"
-	ProtoUint32   ProtoType = "uint32"
-	ProtoUint64   ProtoType = "uint64"
-	ProtoFloat    ProtoType = "float"
-	ProtoDouble   ProtoType = "double"
-	ProtoBool     ProtoType = "bool"
-	ProtoBytes    ProtoType = "bytes"
+	ProtoString    ProtoType = "string"
+	ProtoInt32     ProtoType = "int32"
+	ProtoInt64     ProtoType = "int64"
+	ProtoUint32    ProtoType = "uint32"
+	ProtoUint64    ProtoType = "uint64"
+	ProtoFloat     ProtoType = "float"
+	ProtoDouble    ProtoType = "double"
+	ProtoBool      ProtoType = "bool"
+	ProtoBytes     ProtoType = "bytes"
 	ProtoTimestamp ProtoType = "google.protobuf.Timestamp"
 )
 
@@ -35,10 +35,10 @@ type ProtoFieldDefinition struct {
 
 // ProtoMessageDefinition define uma mensagem Protobuf.
 type ProtoMessageDefinition struct {
-	Name     string
-	Fields   []ProtoFieldDefinition
-	Comment  string
-	Nested   []*ProtoMessageDefinition
+	Name    string
+	Fields  []ProtoFieldDefinition
+	Comment string
+	Nested  []*ProtoMessageDefinition
 }
 
 // ProtoServiceDefinition define um serviço gRPC.
@@ -50,11 +50,11 @@ type ProtoServiceDefinition struct {
 
 // ProtoMethodDefinition define um método RPC.
 type ProtoMethodDefinition struct {
-	Name       string
-	Input      string
-	Output     string
-	Comment    string
-	Streaming  bool
+	Name         string
+	Input        string
+	Output       string
+	Comment      string
+	Streaming    bool
 	ClientStream bool
 	ServerStream bool
 }
@@ -327,7 +327,7 @@ func (g *ProtoGenerator) generateCRUDMessages(typeName string) {
 
 	// Delete response
 	g.messages[fmt.Sprintf("Delete%sResponse", typeName)] = &ProtoMessageDefinition{
-		Name: fmt.Sprintf("Delete%sResponse", typeName),
+		Name:   fmt.Sprintf("Delete%sResponse", typeName),
 		Fields: []ProtoFieldDefinition{},
 	}
 }

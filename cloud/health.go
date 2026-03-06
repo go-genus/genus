@@ -64,9 +64,9 @@ type ReadinessConfig struct {
 
 // HealthCheckerConfig configuração do health checker.
 type HealthCheckerConfig struct {
-	DB             *sql.DB
-	Version        string
-	LiveTimeout    time.Duration
+	DB              *sql.DB
+	Version         string
+	LiveTimeout     time.Duration
 	ReadinessConfig ReadinessConfig
 }
 
@@ -178,7 +178,7 @@ func (h *HealthChecker) LivenessHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 }
 
@@ -206,7 +206,7 @@ func (h *HealthChecker) ReadinessHandler() http.HandlerFunc {
 			})
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 			return
 		}
 
@@ -249,7 +249,7 @@ func (h *HealthChecker) ReadinessHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 }
 
@@ -280,7 +280,7 @@ func (h *HealthChecker) StartupHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 }
 

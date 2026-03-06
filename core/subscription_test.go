@@ -256,10 +256,7 @@ func TestSubscriptionManager_DropNotifyTrigger_Error(t *testing.T) {
 	sm := NewSubscriptionManager(exec, dialect, config)
 	defer sm.Close()
 
-	err := sm.DropNotifyTrigger(context.Background(), "users")
-	if err != nil {
-		// First ExecContext fails
-	}
+	_ = sm.DropNotifyTrigger(context.Background(), "users")
 }
 
 func TestChangeStream_Changes(t *testing.T) {

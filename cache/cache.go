@@ -36,13 +36,13 @@ type Cache interface {
 
 // CacheStats contém estatísticas do cache.
 type CacheStats struct {
-	Hits       int64
-	Misses     int64
-	Sets       int64
-	Deletes    int64
-	Evictions  int64
-	Size       int64
-	HitRate    float64
+	Hits      int64
+	Misses    int64
+	Sets      int64
+	Deletes   int64
+	Evictions int64
+	Size      int64
+	HitRate   float64
 }
 
 // CacheConfig contém configurações do cache.
@@ -138,7 +138,7 @@ func (c *InMemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
 
 	// Verifica expiração
 	if time.Now().After(entry.expiresAt) {
-		c.Delete(ctx, key)
+		_ = c.Delete(ctx, key)
 		c.mu.Lock()
 		c.stats.Misses++
 		c.mu.Unlock()

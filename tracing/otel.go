@@ -77,11 +77,11 @@ func WithAttributes(attrs map[string]interface{}) SpanOption {
 // noopSpan é um span que não faz nada.
 type noopSpan struct{}
 
-func (noopSpan) End()                                              {}
-func (noopSpan) SetStatus(SpanStatus, string)                      {}
-func (noopSpan) SetAttribute(string, interface{})                  {}
-func (noopSpan) RecordError(error)                                 {}
-func (noopSpan) AddEvent(string, map[string]interface{})           {}
+func (noopSpan) End()                                    {}
+func (noopSpan) SetStatus(SpanStatus, string)            {}
+func (noopSpan) SetAttribute(string, interface{})        {}
+func (noopSpan) RecordError(error)                       {}
+func (noopSpan) AddEvent(string, map[string]interface{}) {}
 
 // NoopTracer é um tracer que não faz nada.
 type NoopTracer struct{}
@@ -92,10 +92,10 @@ func (NoopTracer) Start(ctx context.Context, name string, opts ...SpanOption) (c
 
 // TracedExecutor wraps an executor with tracing.
 type TracedExecutor struct {
-	executor  core.Executor
-	tracer    Tracer
-	dbSystem  string // "postgresql", "mysql", "sqlite"
-	dbName    string
+	executor   core.Executor
+	tracer     Tracer
+	dbSystem   string // "postgresql", "mysql", "sqlite"
+	dbName     string
 	serverAddr string
 }
 
@@ -217,11 +217,11 @@ func (te *TracedExecutor) QueryRowContext(ctx context.Context, query string, arg
 // OTelSpan wraps an OpenTelemetry span.
 // Este tipo permite integração com go.opentelemetry.io/otel sem importar diretamente.
 type OTelSpan struct {
-	endFunc           func()
-	setStatusFunc     func(status SpanStatus, description string)
-	setAttributeFunc  func(key string, value interface{})
-	recordErrorFunc   func(err error)
-	addEventFunc      func(name string, attrs map[string]interface{})
+	endFunc          func()
+	setStatusFunc    func(status SpanStatus, description string)
+	setAttributeFunc func(key string, value interface{})
+	recordErrorFunc  func(err error)
+	addEventFunc     func(name string, attrs map[string]interface{})
 }
 
 func (s *OTelSpan) End() {

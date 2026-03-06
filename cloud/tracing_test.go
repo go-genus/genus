@@ -965,9 +965,7 @@ func TestNewJaegerProvider(t *testing.T) {
 	}
 
 	// Verify defaults were applied
-	if config.SampleRate != 0 {
-		// SampleRate is set locally in the function, not on our config
-	}
+	_ = config.SampleRate
 }
 
 func TestNewJaegerProvider_CustomConfig(t *testing.T) {

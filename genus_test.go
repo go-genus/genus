@@ -28,8 +28,8 @@ func (d *fakeDriver) Open(name string) (driver.Conn, error) {
 
 // fakeDriverFailAfterN falha no N-ésimo Open
 type fakeDriverFailAfterN struct {
-	count    int
-	failAt   int
+	count  int
+	failAt int
 }
 
 func (d *fakeDriverFailAfterN) Open(name string) (driver.Conn, error) {
@@ -45,13 +45,13 @@ type fakeConn struct{}
 func (c *fakeConn) Prepare(query string) (driver.Stmt, error) {
 	return &fakeStmt{}, nil
 }
-func (c *fakeConn) Close() error                            { return nil }
-func (c *fakeConn) Begin() (driver.Tx, error)               { return &fakeTx{}, nil }
+func (c *fakeConn) Close() error              { return nil }
+func (c *fakeConn) Begin() (driver.Tx, error) { return &fakeTx{}, nil }
 
 type fakeStmt struct{}
 
-func (s *fakeStmt) Close() error                               { return nil }
-func (s *fakeStmt) NumInput() int                              { return 0 }
+func (s *fakeStmt) Close() error  { return nil }
+func (s *fakeStmt) NumInput() int { return 0 }
 func (s *fakeStmt) Exec(args []driver.Value) (driver.Result, error) {
 	return &fakeResult{}, nil
 }
@@ -154,9 +154,9 @@ func init() {
 
 type mockDialect struct{}
 
-func (d *mockDialect) Placeholder(n int) string            { return "?" }
-func (d *mockDialect) QuoteIdentifier(name string) string  { return `"` + name + `"` }
-func (d *mockDialect) GetType(goType string) string        { return "TEXT" }
+func (d *mockDialect) Placeholder(n int) string           { return "?" }
+func (d *mockDialect) QuoteIdentifier(name string) string { return `"` + name + `"` }
+func (d *mockDialect) GetType(goType string) string       { return "TEXT" }
 
 // --- Mock Logger ---
 

@@ -429,18 +429,18 @@ func TestNewCockroachDBAdapter_Defaults(t *testing.T) {
 
 func TestNewCockroachDBAdapter_WithCerts(t *testing.T) {
 	config := CockroachDBConfig{
-		Hosts:          []string{"host1"},
-		Port:           26257,
-		Database:       "testdb",
-		Username:       "user",
-		Password:       "pass",
-		SSLMode:        "verify-full",
-		CACertPath:     "/path/to/ca.crt",
-		ClientCertPath: "/path/to/client.crt",
-		ClientKeyPath:  "/path/to/client.key",
-		ClusterName:    "my-cluster",
-		MaxOpenConns:   50,
-		MaxIdleConns:   10,
+		Hosts:           []string{"host1"},
+		Port:            26257,
+		Database:        "testdb",
+		Username:        "user",
+		Password:        "pass",
+		SSLMode:         "verify-full",
+		CACertPath:      "/path/to/ca.crt",
+		ClientCertPath:  "/path/to/client.crt",
+		ClientKeyPath:   "/path/to/client.key",
+		ClusterName:     "my-cluster",
+		MaxOpenConns:    50,
+		MaxIdleConns:    10,
 		ConnMaxLifetime: 30 * time.Minute,
 	}
 

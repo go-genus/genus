@@ -200,8 +200,8 @@ func (es *EventStore) LoadFromVersion(ctx context.Context, aggregateID, aggregat
 			return nil, err
 		}
 
-		json.Unmarshal(dataJSON, &event.Data)
-		json.Unmarshal(metaJSON, &event.Metadata)
+		_ = json.Unmarshal(dataJSON, &event.Data)
+		_ = json.Unmarshal(metaJSON, &event.Metadata)
 
 		events = append(events, event)
 	}
@@ -484,7 +484,7 @@ func (ss *SnapshotStore) Load(ctx context.Context, aggregateID, aggregateType st
 		return nil, err
 	}
 
-	json.Unmarshal(stateJSON, &snapshot.State)
+	_ = json.Unmarshal(stateJSON, &snapshot.State)
 	return &snapshot, nil
 }
 
@@ -503,8 +503,8 @@ type Snapshotable interface {
 // SnapshotRepository gerencia aggregates com snapshots.
 type SnapshotRepository[T Snapshotable] struct {
 	*AggregateRepository[T]
-	snapshotStore     *SnapshotStore
-	snapshotInterval  int64
+	snapshotStore    *SnapshotStore
+	snapshotInterval int64
 }
 
 // NewSnapshotRepository cria um repository com suporte a snapshots.

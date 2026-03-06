@@ -585,7 +585,7 @@ func TestAuditor_GetAuditHistory_EmptyResult(t *testing.T) {
 	if err != nil {
 		t.Logf("GetAuditHistory error (may be expected with mock): %v", err)
 	}
-	if entries != nil && len(entries) != 0 {
+	if len(entries) != 0 {
 		t.Errorf("expected 0 entries, got %d", len(entries))
 	}
 }

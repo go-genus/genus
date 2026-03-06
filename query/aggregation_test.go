@@ -393,7 +393,7 @@ func TestAggregateBuilder_BuildCondition_AllOperators(t *testing.T) {
 
 	// IsNotNull
 	idx = 1
-	sql, args = ab.buildCondition(Condition{Field: "name", Operator: OpIsNotNull}, &idx)
+	sql, _ = ab.buildCondition(Condition{Field: "name", Operator: OpIsNotNull}, &idx)
 	if sql != "name IS NOT NULL" {
 		t.Errorf("IsNotNull: got %q", sql)
 	}
@@ -410,7 +410,7 @@ func TestAggregateBuilder_BuildCondition_AllOperators(t *testing.T) {
 
 	// NotIn
 	idx = 1
-	sql, args = ab.buildCondition(Condition{Field: "id", Operator: OpNotIn, Value: []int{1, 2}}, &idx)
+	sql, _ = ab.buildCondition(Condition{Field: "id", Operator: OpNotIn, Value: []int{1, 2}}, &idx)
 	if !strings.Contains(sql, "NOT IN") {
 		t.Errorf("NotIn: got %q", sql)
 	}
@@ -427,7 +427,7 @@ func TestAggregateBuilder_BuildCondition_AllOperators(t *testing.T) {
 
 	// Between invalid
 	idx = 1
-	sql, args = ab.buildCondition(Condition{Field: "age", Operator: OpBetween, Value: []int{18}}, &idx)
+	sql, _ = ab.buildCondition(Condition{Field: "age", Operator: OpBetween, Value: []int{18}}, &idx)
 	if sql != "" {
 		t.Errorf("Between invalid: got %q", sql)
 	}
@@ -500,10 +500,7 @@ func TestAggregateBuilder_Immutability(t *testing.T) {
 	if strings.Contains(sql1, "SUM") {
 		t.Error("ab1 should not contain ab2's SUM")
 	}
-	if strings.Contains(sql2, "COUNT(*)") && !strings.Contains(sql2, "AS count") {
-		// sql2 will only have the default COUNT(*) if no aggregates
-		// It should have SUM, not the CountAll from ab1
-	}
+	_ = sql2 // sql2 should have SUM, not the CountAll from ab1
 	if !strings.Contains(sql1, "COUNT(*)") {
 		t.Errorf("ab1 should contain COUNT(*), got %q", sql1)
 	}

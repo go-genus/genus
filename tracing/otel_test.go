@@ -48,7 +48,7 @@ func TestSimpleTracer(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	ctx, span := tracer.Start(ctx, "test-span")
+	_, span := tracer.Start(ctx, "test-span")
 
 	if !startCalled {
 		t.Error("OnStart should be called")
@@ -103,7 +103,7 @@ func TestOTelAdapter(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	ctx, span := adapter.Start(ctx, "test-span")
+	_, span := adapter.Start(ctx, "test-span")
 
 	if !startCalled {
 		t.Error("StartFunc should be called")

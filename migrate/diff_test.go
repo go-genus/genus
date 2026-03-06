@@ -1302,7 +1302,7 @@ type fakeDriverRows struct {
 }
 
 func (r *fakeDriverRows) Columns() []string { return r.columns }
-func (r *fakeDriverRows) Close() error       { return nil }
+func (r *fakeDriverRows) Close() error      { return nil }
 func (r *fakeDriverRows) Next(dest []driver.Value) error {
 	if r.index >= len(r.values) {
 		return io.EOF
@@ -1317,8 +1317,8 @@ type fakeDriverStmt struct {
 	rows *fakeDriverRows
 }
 
-func (s *fakeDriverStmt) Close() error                               { return nil }
-func (s *fakeDriverStmt) NumInput() int                              { return -1 }
+func (s *fakeDriverStmt) Close() error  { return nil }
+func (s *fakeDriverStmt) NumInput() int { return -1 }
 func (s *fakeDriverStmt) Exec(args []driver.Value) (driver.Result, error) {
 	return &fakeDriverResult{}, nil
 }
@@ -1352,7 +1352,7 @@ type fakeDriverConn struct {
 func (c *fakeDriverConn) Prepare(query string) (driver.Stmt, error) {
 	return &fakeDriverStmt{rows: c.rows}, nil
 }
-func (c *fakeDriverConn) Close() error                    { return nil }
+func (c *fakeDriverConn) Close() error              { return nil }
 func (c *fakeDriverConn) Begin() (driver.Tx, error) { return &fakeDriverTx{}, nil }
 
 // fakeDriver implements driver.Driver

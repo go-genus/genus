@@ -342,7 +342,6 @@ func (s *ScalarSubquery) SQL() string {
 // A subquery referencia colunas da query externa.
 type CorrelatedSubquery struct {
 	Subquery
-	correlation string // Expressão de correlação (ex: "outer.id = inner.user_id")
 }
 
 // CorrelatedSubqueryBuilder constrói subqueries correlacionadas.

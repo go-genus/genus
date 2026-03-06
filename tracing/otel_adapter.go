@@ -40,12 +40,12 @@ import (
 //	    DBSystem: "postgresql",
 //	})
 type OTelAdapter struct {
-	startFunc      func(ctx context.Context, name string) (context.Context, interface{})
-	setAttrFunc    func(span interface{}, key string, value interface{})
-	recordErrFunc  func(span interface{}, err error)
-	setStatusFunc  func(span interface{}, ok bool, msg string)
-	endFunc        func(span interface{})
-	addEventFunc   func(span interface{}, name string, attrs map[string]interface{})
+	startFunc     func(ctx context.Context, name string) (context.Context, interface{})
+	setAttrFunc   func(span interface{}, key string, value interface{})
+	recordErrFunc func(span interface{}, err error)
+	setStatusFunc func(span interface{}, ok bool, msg string)
+	endFunc       func(span interface{})
+	addEventFunc  func(span interface{}, name string, attrs map[string]interface{})
 }
 
 // OTelAdapterConfig configura o adapter.

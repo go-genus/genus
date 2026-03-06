@@ -17,14 +17,14 @@ import (
 
 // MigrationNode representa um nó no DAG de migrações.
 type MigrationNode struct {
-	Version     int64    `json:"version"`
-	Description string   `json:"description"`
-	Status      string   `json:"status"` // applied, pending, failed
-	DependsOn   []int64  `json:"depends_on"`
-	FileName    string   `json:"file_name"`
-	CreatedAt   string   `json:"created_at,omitempty"`
-	AppliedAt   string   `json:"applied_at,omitempty"`
-	Duration    string   `json:"duration,omitempty"`
+	Version     int64   `json:"version"`
+	Description string  `json:"description"`
+	Status      string  `json:"status"` // applied, pending, failed
+	DependsOn   []int64 `json:"depends_on"`
+	FileName    string  `json:"file_name"`
+	CreatedAt   string  `json:"created_at,omitempty"`
+	AppliedAt   string  `json:"applied_at,omitempty"`
+	Duration    string  `json:"duration,omitempty"`
 }
 
 // MigrationDAG representa o grafo de migrações.
@@ -207,7 +207,7 @@ func (v *MigrationVisualizer) readMigrationFiles() ([]MigrationInfo, error) {
 
 func parseInt64(s string) int64 {
 	var n int64
-	fmt.Sscanf(s, "%d", &n)
+	_, _ = fmt.Sscanf(s, "%d", &n)
 	return n
 }
 
@@ -215,11 +215,11 @@ func parseInt64(s string) int64 {
 type OutputFormat string
 
 const (
-	OutputFormatJSON     OutputFormat = "json"
-	OutputFormatHTML     OutputFormat = "html"
-	OutputFormatDOT      OutputFormat = "dot"
-	OutputFormatMermaid  OutputFormat = "mermaid"
-	OutputFormatASCII    OutputFormat = "ascii"
+	OutputFormatJSON    OutputFormat = "json"
+	OutputFormatHTML    OutputFormat = "html"
+	OutputFormatDOT     OutputFormat = "dot"
+	OutputFormatMermaid OutputFormat = "mermaid"
+	OutputFormatASCII   OutputFormat = "ascii"
 )
 
 // Visualize gera a visualização no formato especificado.

@@ -12,10 +12,10 @@ func TestStringField(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		cond     Condition
-		wantOp   Operator
-		wantVal  interface{}
+		name    string
+		cond    Condition
+		wantOp  Operator
+		wantVal interface{}
 	}{
 		{"Eq", f.Eq("John"), OpEq, "John"},
 		{"Ne", f.Ne("John"), OpNe, "John"},

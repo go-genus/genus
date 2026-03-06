@@ -47,10 +47,11 @@ func (db *DB) Upsert(ctx context.Context, model interface{}) error {
 func (db *DB) UpsertWithConfig(ctx context.Context, model interface{}, config UpsertConfig) error {
 	start := time.Now()
 
-	val := reflect.ValueOf(model)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
+	v := reflect.ValueOf(model)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
+	_ = v
 
 	tableName := getTableName(model)
 	columns, values, err := getColumnsAndValues(model)

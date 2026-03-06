@@ -11,26 +11,26 @@ import (
 
 // IndexSuggestion representa uma sugestão de índice.
 type IndexSuggestion struct {
-	Table       string   `json:"table"`
-	Columns     []string `json:"columns"`
-	Type        string   `json:"type"` // btree, hash, gin, gist
-	Reason      string   `json:"reason"`
-	Impact      string   `json:"impact"` // high, medium, low
-	CreateSQL   string   `json:"create_sql"`
-	EstimatedImprovement float64 `json:"estimated_improvement"` // percentage
+	Table                string   `json:"table"`
+	Columns              []string `json:"columns"`
+	Type                 string   `json:"type"` // btree, hash, gin, gist
+	Reason               string   `json:"reason"`
+	Impact               string   `json:"impact"` // high, medium, low
+	CreateSQL            string   `json:"create_sql"`
+	EstimatedImprovement float64  `json:"estimated_improvement"` // percentage
 }
 
 // QueryAnalysis representa a análise de uma query.
 type QueryAnalysis struct {
-	SQL               string             `json:"sql"`
-	EstimatedCost     float64            `json:"estimated_cost"`
-	EstimatedRows     int64              `json:"estimated_rows"`
-	SeqScans          []string           `json:"seq_scans"`
-	IndexScans        []string           `json:"index_scans"`
-	MissingIndexes    []IndexSuggestion  `json:"missing_indexes"`
-	Warnings          []string           `json:"warnings"`
-	Recommendations   []string           `json:"recommendations"`
-	ExecutionPlan     string             `json:"execution_plan"`
+	SQL             string            `json:"sql"`
+	EstimatedCost   float64           `json:"estimated_cost"`
+	EstimatedRows   int64             `json:"estimated_rows"`
+	SeqScans        []string          `json:"seq_scans"`
+	IndexScans      []string          `json:"index_scans"`
+	MissingIndexes  []IndexSuggestion `json:"missing_indexes"`
+	Warnings        []string          `json:"warnings"`
+	Recommendations []string          `json:"recommendations"`
+	ExecutionPlan   string            `json:"execution_plan"`
 }
 
 // QueryOptimizer analisa e otimiza queries.
@@ -81,7 +81,7 @@ func (qo *QueryOptimizer) Analyze(ctx context.Context, sql string, args ...inter
 				var col interface{}
 				cols = append(cols, &col)
 			}
-			rows.Scan(cols...)
+			_ = rows.Scan(cols...)
 			continue
 		}
 		planLines = append(planLines, line)
@@ -126,13 +126,13 @@ func (qo *QueryOptimizer) analyzePlan(analysis *QueryAnalysis) {
 	// Detecta custo estimado
 	costRegex := regexp.MustCompile(`cost=[\d.]+\.\.(\d+\.?\d*)`)
 	if match := costRegex.FindStringSubmatch(plan); len(match) > 1 {
-		fmt.Sscanf(match[1], "%f", &analysis.EstimatedCost)
+		_, _ = fmt.Sscanf(match[1], "%f", &analysis.EstimatedCost)
 	}
 
 	// Detecta rows estimadas
 	rowsRegex := regexp.MustCompile(`rows=(\d+)`)
 	if match := rowsRegex.FindStringSubmatch(plan); len(match) > 1 {
-		fmt.Sscanf(match[1], "%d", &analysis.EstimatedRows)
+		_, _ = fmt.Sscanf(match[1], "%d", &analysis.EstimatedRows)
 	}
 
 	// Warnings para Seq Scans em tabelas grandes
@@ -186,11 +186,11 @@ func (qo *QueryOptimizer) suggestIndexes(analysis *QueryAnalysis, sql string) {
 			for _, seqTable := range analysis.SeqScans {
 				if seqTable == tableName {
 					suggestion := IndexSuggestion{
-						Table:   tableName,
-						Columns: columns,
-						Type:    "btree",
-						Reason:  "Sequential scan detected with WHERE clause filters",
-						Impact:  "high",
+						Table:                tableName,
+						Columns:              columns,
+						Type:                 "btree",
+						Reason:               "Sequential scan detected with WHERE clause filters",
+						Impact:               "high",
 						EstimatedImprovement: 50.0,
 					}
 
@@ -221,11 +221,11 @@ func (qo *QueryOptimizer) suggestIndexes(analysis *QueryAnalysis, sql string) {
 		for _, seqTable := range analysis.SeqScans {
 			if seqTable == tableName {
 				suggestion := IndexSuggestion{
-					Table:   tableName,
-					Columns: []string{orderCol},
-					Type:    "btree",
-					Reason:  "ORDER BY without index causes sorting in memory",
-					Impact:  "medium",
+					Table:                tableName,
+					Columns:              []string{orderCol},
+					Type:                 "btree",
+					Reason:               "ORDER BY without index causes sorting in memory",
+					Impact:               "medium",
 					EstimatedImprovement: 30.0,
 				}
 
@@ -338,15 +338,15 @@ func (qo *QueryOptimizer) AutoIndex(ctx context.Context, analysis *QueryAnalysis
 
 // TableStats representa estatísticas de uma tabela.
 type TableStats struct {
-	TableName    string  `json:"table_name"`
-	RowCount     int64   `json:"row_count"`
-	TotalSize    string  `json:"total_size"`
-	IndexSize    string  `json:"index_size"`
-	SeqScans     int64   `json:"seq_scans"`
-	IndexScans   int64   `json:"index_scans"`
-	DeadTuples   int64   `json:"dead_tuples"`
-	LastVacuum   string  `json:"last_vacuum"`
-	LastAnalyze  string  `json:"last_analyze"`
+	TableName   string `json:"table_name"`
+	RowCount    int64  `json:"row_count"`
+	TotalSize   string `json:"total_size"`
+	IndexSize   string `json:"index_size"`
+	SeqScans    int64  `json:"seq_scans"`
+	IndexScans  int64  `json:"index_scans"`
+	DeadTuples  int64  `json:"dead_tuples"`
+	LastVacuum  string `json:"last_vacuum"`
+	LastAnalyze string `json:"last_analyze"`
 }
 
 // GetTableStats obtém estatísticas de uma tabela (PostgreSQL).

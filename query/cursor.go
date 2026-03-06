@@ -453,7 +453,6 @@ func (b *Builder[T]) buildCursorSQL(config CursorConfig, dialect core.Dialect) (
 				op,
 				dialect.Placeholder(argIndex)))
 			args = append(args, data.Value)
-			argIndex++
 		}
 	}
 

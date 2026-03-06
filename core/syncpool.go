@@ -40,7 +40,7 @@ func PutScanValues(slice []interface{}) {
 		slice[i] = nil
 	}
 	idx := poolIndex(cap(slice))
-	scanValuePools[idx].Put(slice[:0])
+	scanValuePools[idx].Put(slice[:0]) //nolint:staticcheck // slice reuse is intentional for performance
 }
 
 // ========================================
@@ -97,7 +97,7 @@ func PutArgs(args []interface{}) {
 	for i := range args {
 		args[i] = nil
 	}
-	argsPool.Put(args[:0])
+	argsPool.Put(args[:0]) //nolint:staticcheck // slice reuse is intentional for performance
 }
 
 // ========================================
@@ -165,7 +165,7 @@ func PutInt64Slice(slice []int64) {
 	if slice == nil || cap(slice) > 1024 {
 		return
 	}
-	int64Pool.Put(slice[:0])
+	int64Pool.Put(slice[:0]) //nolint:staticcheck // slice reuse is intentional for performance
 }
 
 // ========================================

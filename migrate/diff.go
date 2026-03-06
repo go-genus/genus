@@ -50,11 +50,11 @@ type TableSchema struct {
 
 // ColumnSchema representa o schema de uma coluna.
 type ColumnSchema struct {
-	Name         string
-	Type         string
-	Nullable     bool
-	Default      string
-	PrimaryKey   bool
+	Name          string
+	Type          string
+	Nullable      bool
+	Default       string
+	PrimaryKey    bool
 	AutoIncrement bool
 }
 
@@ -68,12 +68,12 @@ type IndexSchema struct {
 
 // ForeignKeySchema representa o schema de uma foreign key.
 type ForeignKeySchema struct {
-	Name            string
-	Columns         []string
-	RefTable        string
-	RefColumns      []string
-	OnDelete        string
-	OnUpdate        string
+	Name       string
+	Columns    []string
+	RefTable   string
+	RefColumns []string
+	OnDelete   string
+	OnUpdate   string
 }
 
 // ConstraintSchema representa o schema de uma constraint.

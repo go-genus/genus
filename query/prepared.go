@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/go-genus/genus/core"
 )
@@ -19,8 +18,6 @@ type PreparedQuery[T any] struct {
 	numParams int
 }
 
-// preparedQueryCache caches PreparedQuery by a key (usually table + conditions pattern).
-var preparedQueryCache sync.Map
 
 // PrepareSelectAll creates a prepared SELECT query for the given table.
 // The query can be executed multiple times with different WHERE values.

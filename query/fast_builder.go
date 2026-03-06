@@ -36,7 +36,6 @@ type FastBuilder[T any] struct {
 type stmtCache struct {
 	mu    sync.RWMutex
 	stmts map[string]*sql.Stmt
-	db    *sql.DB
 }
 
 var globalStmtCache = &stmtCache{

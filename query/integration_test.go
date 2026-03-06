@@ -974,7 +974,7 @@ type valueSoftDeletable struct {
 	deleted bool
 }
 
-func (v valueSoftDeletable) TableName() string        { return "soft_items" }
+func (v valueSoftDeletable) TableName() string         { return "soft_items" }
 func (v valueSoftDeletable) IsDeleted() bool           { return v.deleted }
 func (v valueSoftDeletable) GetDeletedAt() *time.Time  { return nil }
 func (v valueSoftDeletable) SetDeletedAt(t *time.Time) {}
@@ -1536,10 +1536,10 @@ func TestPreloadManyToMany_Integration(t *testing.T) {
 // ===== Polymorphic preload test =====
 
 type Comment struct {
-	ID              int64  `db:"id"`
-	Body            string `db:"body"`
-	CommentableType string `db:"commentable_type"`
-	CommentableId   int64  `db:"commentable_id"`
+	ID              int64    `db:"id"`
+	Body            string   `db:"body"`
+	CommentableType string   `db:"commentable_type"`
+	CommentableId   int64    `db:"commentable_id"`
 	Commentable     Blogpost `relation:"polymorphic,polymorphic=commentable"`
 }
 
@@ -2032,9 +2032,7 @@ func TestN1Detector_Record_WithStackTrace(t *testing.T) {
 	}
 
 	detections := d.GetDetections()
-	if len(detections) > 0 && detections[0].CallerFile == "" {
-		// CallerFile might be empty in test context, just check it doesn't panic
-	}
+	_ = detections // CallerFile might be empty in test context, just check it doesn't panic
 }
 
 // ===== Aggregation: buildWhereClause with ConditionGroup =====
@@ -2236,8 +2234,8 @@ func TestBuilder_Find_AfterFindHookError(t *testing.T) {
 // ===== Builder.Find with Preload that errors =====
 
 type preloadErrorUser struct {
-	ID    int64  `db:"id"`
-	Name  string `db:"name"`
+	ID    int64     `db:"id"`
+	Name  string    `db:"name"`
 	Posts []Article `relation:"has_many,foreign_key=user_id"`
 }
 
@@ -2554,7 +2552,7 @@ func (e *errorCache) Set(ctx context.Context, key string, value []byte, ttl time
 func (e *errorCache) Delete(ctx context.Context, key string) error            { return nil }
 func (e *errorCache) DeleteByPrefix(ctx context.Context, prefix string) error { return nil }
 func (e *errorCache) Clear(ctx context.Context) error                         { return nil }
-func (e *errorCache) Stats() cache.CacheStats                                { return cache.CacheStats{} }
+func (e *errorCache) Stats() cache.CacheStats                                 { return cache.CacheStats{} }
 
 func TestCachedBuilder_Find_CacheGetError(t *testing.T) {
 	db := setupTestDB(t)
@@ -2595,7 +2593,7 @@ func (c *corruptCache) Set(ctx context.Context, key string, value []byte, ttl ti
 func (c *corruptCache) Delete(ctx context.Context, key string) error            { return nil }
 func (c *corruptCache) DeleteByPrefix(ctx context.Context, prefix string) error { return nil }
 func (c *corruptCache) Clear(ctx context.Context) error                         { return nil }
-func (c *corruptCache) Stats() cache.CacheStats                                { return cache.CacheStats{} }
+func (c *corruptCache) Stats() cache.CacheStats                                 { return cache.CacheStats{} }
 
 func TestCachedBuilder_Find_CorruptCacheData(t *testing.T) {
 	db := setupTestDB(t)

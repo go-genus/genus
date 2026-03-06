@@ -163,7 +163,7 @@ func (cb *CachedBuilder[T]) Find(ctx context.Context) ([]T, error) {
 
 	// Armazena no cache
 	if data, err := json.Marshal(results); err == nil {
-		cb.cache.Set(ctx, cacheKey, data, cb.ttl)
+		_ = cb.cache.Set(ctx, cacheKey, data, cb.ttl)
 	}
 
 	return results, nil
