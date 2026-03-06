@@ -18,7 +18,6 @@ type PreparedQuery[T any] struct {
 	numParams int
 }
 
-
 // PrepareSelectAll creates a prepared SELECT query for the given table.
 // The query can be executed multiple times with different WHERE values.
 func PrepareSelectAll[T any](executor core.Executor, dialect core.Dialect, tableName string, columns []string, whereColumns []string) *PreparedQuery[T] {
