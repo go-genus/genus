@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/lib/pq v1.11.2
+	github.com/lib/pq v1.12.0
 	github.com/mattn/go-sqlite3 v1.14.34
 	go.opentelemetry.io/otel v1.41.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0
